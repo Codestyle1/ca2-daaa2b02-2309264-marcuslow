@@ -4,4 +4,4 @@ __pytest__
 instance/
 __pycache__
 database.db
-/Dataset
+Dataset
