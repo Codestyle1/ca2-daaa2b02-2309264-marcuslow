@@ -1,42 +1,48 @@
 from application import app
 from application import db
-from flask import render_template, request, flash, redirect, url_for, session
+from flask import render_template, request, flash, redirect, url_for, session, jsonify
 from application.forms import LoginForm, SignupForm
 from application.models import Login
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_cors import CORS, cross_origin
 from tensorflow.keras.preprocessing import image
+import traceback
 from PIL import Image, ImageOps
 import numpy as np
 import tensorflow.keras.models
 import re
 import base64
 from io import BytesIO
+import io
 # from tensorflow.keras.datasets.mnist import load_data
 import json
 import numpy as np
 import requests
 import pathlib, os
-def parseImage(imgData):
-    # parse canvas bytes and save as output.png
-    imgstr = re.search(b'base64,(.*)', imgData).group(1)
-    with open('output.png','wb') as output:
-        output.write(base64.decodebytes(imgstr))
-        im = Image.open('output.png').convert('RGB')
-        im_invert = ImageOps.invert(im)
-        im_invert.save('output.png')
-
-def make_prediction(instances):
-    data = json.dumps({"signature_name": "serving_default", "instances":
-    instances.tolist()})
-    headers = {"content-type": "application/json"}
-    json_response = requests.post(url, data=data, headers=headers)
-    predictions = json.loads(json_response.text)['predictions']
-    return predictions
 
 #Server URL – change xyz to Practical 7 deployed URL [TAKE NOTE]
-url = 'https://gan-model-app-ca2.onrender.com/v1/models/saved_GAN_models'
+url = 'https://gan-model-app-ca2.onrender.com/v1/models/saved_GAN_models:predict'
+
+# Sample data based on your model's input signature
+data = {
+    "signature_name": "serving_default",
+    "instances": [
+        {
+            "inputs": [[0.1] * 100],  # A simple random latent vector
+            "inputs_1": [[1] * 26]  # A simple one-hot vector
+        }
+    ]
+}
+
+headers = {"content-type": "application/json"}
+
+# Send a POST request
+response = requests.post(url, json=data, headers=headers)
+
+# Check the response
+print(response.status_code)
+print(response.json())
 
 # runs every time render_template is called
 @app.context_processor
@@ -130,21 +136,70 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('home'))
 
-
-#Handles http://127.0.0.1:5000/predict
-@app.route("/predict", methods=['GET','POST'])
-@cross_origin(origin='localhost',headers=['Content- Type','Authorization'])
+# Handle http://127.0.0.1:5000/predict
+@app.route("/predict", methods=['GET', 'POST'])
 def predict():
-    # get data from drawing canvas and save as image
-    parseImage(request.get_data())
-    # Decoding and pre-processing base64 image
-    img = image.img_to_array(image.load_img("output.png", color_mode="grayscale",
-    target_size=(28, 28))) / 255.
-    # reshape data to have a single channel
-    img = img.reshape(1,28,28,1)
-    predictions = make_prediction(img)
-    ret = ""
-    for i, pred in enumerate(predictions):
-        ret = "{}".format(np.argmax(pred))
-        response = ret
-        return response
+    img_base64 = None  # Variable to store generated image (base64 string)
+    
+    if request.method == 'POST':
+        # Retrieve the class label input from the form
+        class_label = request.form.get('class_label')
+        
+        if class_label and len(class_label) == 1 and class_label.isalpha():
+            print(f"Received class label: {class_label}")
+            img_base64 = generate_image_from_class(class_label)
+        else:
+            flash('Please enter a valid class label (single letter A-Z)', 'danger')
+
+    return render_template('predict.html', img_base64=img_base64)
+
+def generate_image_from_class(class_label):
+    try:
+        # Convert class label (e.g., "S") to an integer index (A=0, ..., Z=25)
+        class_index = ord(class_label.lower()) - ord('a')
+
+        # Generate a 100-dimensional latent vector with random floats
+        latent_vector = np.random.rand(1, 100).astype(np.float32)  # Shape should be (1, 100)
+        
+        # Construct the one-hot encoded vector for the class
+        one_hot_encoded_class = np.array([1.0 if i == class_index else 0.0 for i in range(26)], dtype=np.float32)  # Shape should be (1, 26)
+
+        # Print the shapes of the inputs
+        print(f"Latent vector shape: {latent_vector.shape}")
+        print(f"One-hot encoded class shape: {one_hot_encoded_class.shape}")
+
+        # Prepare the payload as a dictionary (numpy arrays should be converted to lists)
+        instances = [
+            {
+                "inputs": latent_vector.tolist(),  # Shape should be (1, 100)
+                "inputs_1": one_hot_encoded_class.tolist()  # Shape should be (1, 26)
+            }
+        ]
+        
+        # Serialize the payload into JSON format
+        data = json.dumps({"signature_name": "serving_default", "instances": instances})
+        
+        # Send the request to the GAN model
+        headers = {"Content-Type": "application/json"}
+        json_response = requests.post(url, data=data, headers=headers)
+
+        # Check for a successful response
+        if json_response.status_code == 200:
+            # Parse the JSON response to get the predictions
+            predictions = json.loads(json_response.text)['predictions']
+
+            return predictions
+        else:
+            print(f"Error with GAN model API response: {json_response.status_code}, {json_response.text}")
+            return None
+    except Exception as e:
+        print(f"Error generating image: {e}")
+        return None
+    
+# Handle http://127.0.0.1:5000/history
+@app.route('/history', methods=['GET', 'POST'])
+def history():
+    return render_template('history.html')
+
+if __name__ == "__main__":
+    app.run(debug=True)  # This will run the Flask app

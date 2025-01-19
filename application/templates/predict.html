@@ -1,0 +1,22 @@
+<!-- Inherit from layout.html-->
+{% extends "layout.html" %}
+
+<!-- Dark background img -->
+{% set background_image = 'images/dark_bg.jpg' %}
+
+{% block healthTextHome %}
+<h1>Generate Image</h1>
+
+    <!-- Form to input class label -->
+    <form method="POST" action="{{ url_for('predict') }}">
+        <label for="class_label">Enter Class Label (A-Z):</label>
+        <input type="text" id="class_label" name="class_label" maxlength="1" required>
+        <button type="submit">Generate</button>
+    </form>
+
+    {% if img_base64 %}
+        <h2>Generated Image:</h2>
+        <!-- Display the image if it's generated -->
+        <img src="data:image/png;base64,{{ img_base64 }}" alt="Generated Image">
+    {% endif %}
+{% endblock %}
