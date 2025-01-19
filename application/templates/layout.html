@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="{{ url_for('static',filename='css/main.css')}}" />
     <!-- css link (style.css) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <!-- css link (animations.css) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}" />
     
     <!-- boxicons link -->
     <!-- Source: https://github.com/atisawd/boxicons-->
@@ -108,6 +110,10 @@
         </div>
 
     </div>
+
+    <div id="loading-screen" class="loading-screen">
+        <div class="spinner"></div>
+    </div>    
     
     {% include "includes/footer.html" %}
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" crossorigin="anonymous"></script>
@@ -119,6 +125,29 @@
 </body>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const loadingScreen = document.getElementById('loading-screen');
+
+            // Show the loading screen when a link is clicked
+            document.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();  // Prevent default behavior
+                    const href = this.href;  // Get the href of the clicked link
+                    
+                    // Show the loading screen
+                    loadingScreen.style.display = 'flex';
+                    
+                    // Immediately redirect
+                    window.location.href = href;
+                });
+            });
+
+            // Hide the loading screen when the page has fully loaded
+            window.addEventListener('load', function () {
+                loadingScreen.style.display = 'none';
+            });
+        });
+
         document.addEventListener('DOMContentLoaded', function () {
             let flashMessage = document.getElementById('flash-message');
 
