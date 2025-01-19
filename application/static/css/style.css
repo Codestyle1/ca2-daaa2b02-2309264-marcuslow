@@ -1,0 +1,617 @@
+* {
+    box-sizing: border-box;
+    font-family: "Parkinsans", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 100;
+    font-style: normal;
+    margin: 0;
+    padding: 0;
+}
+
+body{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10%;
+}
+
+header{
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 99;
+    width: 100%;
+    height: 15%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 9%;
+}
+
+/* Flash Message positioning */
+#flash-message {
+    position: absolute;
+    top: 15%;  /* Adjust this to place the flash message below the header */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50%;
+    z-index: 9999;
+    padding: 20px;
+    color: white;
+    text-align: center;
+    color: #333;
+    background-color: rgba(172, 159, 159, 0.8);  /* Slightly transparent background */
+    font-weight: bold;
+    border-radius: 5px;
+    opacity: 0;  /* Initial opacity */
+    visibility: hidden;   /* Initially hidden */
+    transition: opacity 0.5s ease, visibility 0.5s ease;  /* Smooth transition */
+}
+
+.background-media {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* Place behind all other content */
+    overflow: hidden;
+}
+
+.background-media video,
+.background-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures content covers the viewport */
+}
+
+.logo img{
+    width: 100px;
+    height: auto;
+    padding-bottom: 10px;
+}
+
+.navlist{
+    display: flex;
+    list-style-type: none;
+    align-items: center;
+}
+
+.navlist li {
+    padding: 0px 20px;
+}
+
+.navlist a{
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .45s ease;
+}
+
+.navlist .btnLogin-popup{
+    width: 100px;
+    height: 50px;
+    background: transparent;
+    border: 2px solid white;
+    outline: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: .45s ease;
+}
+
+#menu-icon {
+    font-size: 35px;
+    z-index: 100001;
+    cursor: pointer;
+    display: none;
+}
+
+
+.health, .predict{
+    width: 100%;
+    position: relative;
+    display: grid;
+    place-items: center;
+}
+
+/* Content text */
+.health-text {
+    position: relative;
+    text-align: center;
+    color: #fff;
+    margin-top: 5%;
+}
+
+.health-text h1, .health-text h4{
+    padding: 25px;
+}
+
+.start, .about{
+    padding: 10px;
+    background: transparent;
+    border: 2px solid white;
+    outline: none;
+    border-radius: 6px;
+    cursor: pointer;
+    outline: none;
+    font-weight: 500;
+    transition: .45s ease;
+}
+
+/* Login / Register Wrappers */
+.container {
+    display: flex; /* Make the container a flexbox */
+    justify-content: center; /* Horizontally center the .wrapper */
+    align-items: center; /* Vertically center the .wrapper */
+    flex-direction: column; /* Optional: if you want elements stacked */
+}
+
+
+.wrapper {
+    position: relative;
+    width: 400px;
+    height: 500px;
+    background: transparent;
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    transition: height .2s ease;
+}
+
+.wrapper.active {
+    height: 520px;
+}
+
+.wrapper .form-box{
+    width: 100%;
+    padding: 40px;
+}
+
+.wrapper .form-box.register{
+    position: absolute;
+}
+
+.form-box h2{
+    font-size: 2em;
+    color: rgb(0, 0, 0);
+    text-align: center;
+}
+
+.input-box{
+    position: relative;
+    width: 100%;
+    height: 50px;
+    border-bottom: 2px solid rgb(0, 0, 0);
+    margin: 30px 0;
+}
+
+.input-box label{
+    position: absolute;
+    top: 50%;
+    left: 5px;
+    transform: translateY(-50%);
+    font-size: 1em;
+    color: rgb(0, 0, 0);
+    font-weight: 500;
+    pointer-events: none;
+    transition: .5s;
+}
+
+.input-box input:focus~label,
+.input-box input:valid~label{
+    top: -5px;
+}
+
+.input-box input{
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 1em;
+    font-weight: 600;
+    padding: 0 35px 0 5px;
+}
+
+.input-box .icon{
+    position: absolute;
+    right: 8px;
+    font-size: 1.2em;
+    color: rgb(0, 0, 0);
+    line-height: 57px;
+}
+
+.remember-forgot{
+    font-size: .9em;
+    color: rgb(0, 0, 0);
+    font-weight: 500;
+    margin: 0 0 15px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.remember-forgot label input{
+    accent-color: rgb(0, 0, 0);
+    margin-right: 3px;
+}
+
+.remember-forgot a{
+    color: rgb(0, 0, 0);
+    text-decoration: none;
+}
+
+.remember-forgot a:hover{
+    text-decoration: underline;
+}
+
+.btn{
+    width: 100%;
+    height: 45px;
+    background: #808080;
+    border: none;
+    outline: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    color: #fff;
+    font-weight: 500;
+}
+
+.login-register{
+    font-size: .9em;
+    color: rgb(0, 0, 0);
+    text-align: center;
+    font-weight: 500;
+    margin: 25px 0 10px;
+}
+
+.login-register p a{
+    color: rgb(0, 0, 0);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-register p a:hover{
+    text-decoration: underline;
+}
+
+.eye-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 1.2em;
+    color: white;
+}
+
+/* Profile Image */
+.profile-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Username next to the profile image */
+.profile-info a {
+    display: flex; /* Use flexbox to align the profile picture and username horizontally */
+    align-items: center; /* Vertically center the image and username */
+    text-decoration: none; /* Remove underline from the link */
+}
+
+/* Styling for the username */
+.username {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Navigation bar alignment */
+.navbar .nav-item img {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+
+/* Profile Icon and Dropdown Menu */
+.profile-icon {
+    position: relative;
+    display: inline-block;
+}
+
+/* Dropdown Menu (Hidden by default) */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 35px;
+    background-color: #3f3939;
+    color: black;
+    text-align: center;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    min-width: 150px; /* Adjust width as needed */
+    z-index: 100;
+}
+
+/* Dropdown Menu Item */
+.dropdown-item {
+    padding: 5px;
+    text-decoration: none;
+    color: #333;
+    display: block;
+}
+
+.dropdown-item:hover {
+    background-color: #f0f0f0;
+    text-align: center;
+}
+
+/* Remove hover effect */
+.profile-icon:hover .dropdown-menu {
+    display: none;
+}
+
+/* ************************************************** */
+/* Predict Page */
+/* ************************************************** */
+/* Prevent centering of content in the .predict container */
+.predict {
+    display: flex; /* Flexbox for left-right layout */
+    justify-content: flex-start; /* Align content to the left */
+    align-items: flex-start; /* Align items to the top */
+}
+
+/* Left column where the form is located */
+.predict .left-column {
+    width: 100%; /* Take up full width for the form */
+    padding: 20px;
+    max-width: 600px; /* Optional: limit max width */
+}
+
+/* Form container */
+.predict form {
+    width: 100%; /* Ensure form takes up the full width */
+    padding: 20px;
+    border-radius: 8px;
+}
+
+/* Adjust the legend for the title */
+form legend {
+    display: block; /* Ensures the legend is displayed as a block element */
+    font-size: 1.5rem; /* Adjust font size */
+    font-weight: bold; /* Make the title bold */
+    margin-bottom: 20px; /* Space below the title */
+    text-align: left; /* Align the title to the left */
+}
+
+/* Positioning the max value to the right */
+.max-value {
+    float: right;
+}
+
+/* Modal styles */
+.modal {
+    display: none; /* Hidden by default, shown when needed */
+    position: fixed; /* Fixed to the viewport */
+    top: 0; /* Start from the top */
+    left: 50%; /* Horizontally centered */
+    transform: translateX(-50%); /* Center modal horizontally */
+    z-index: 9999; /* Ensure modal is above other content */
+    width: 100%; /* Full screen width */
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+}
+
+/* Modal content styles */
+.modal-content {
+    background-color: #fff;
+    padding: 50px;
+    border: 1px solid #888;
+    width: 50%; /* Set a width for the modal */
+    max-width: 700px; 
+    height: auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    position: absolute; /* Position absolutely inside the modal */
+    top: 50%; /* Adjust this value to move the modal down */
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%); /* Center it vertically and horizontally */
+}
+
+/* Add margin to the input fields for spacing between label and input */
+#bmiForm div input {
+    margin-bottom: 25px; /* Adjust this value to control the space between input fields */
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Loading Spinner Styles */
+#loadingSpinner {
+    display: none;
+    width: 30px;
+    height: 30px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 2s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ************************************************** */
+/* History Page */
+/* ************************************************** */
+/* Container for no history message */
+/* Center align the container content */
+.no-history-container {
+    background-color: #45505b;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 30px auto;
+    text-align: center; /* Center-aligns text and inline elements */
+    max-width: 600px; /* Restrict the width for better readability */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Title with username */
+.intro-text {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+/* Additional message */
+.no-history-message {
+    font-size: 1.2em;
+    color: #ffffff;
+    margin-bottom: 20px;
+}
+
+/* Styled link to prediction page */
+/* Styling for the submit button (green) */
+.btn-submit {
+    background-color: #28a745; /* Green */
+    color: white;
+}
+
+.btn-submit:hover {
+    background-color: #218838; /* Darker green for hover */
+    color: white;
+}
+
+/* Styling for the update button (orange) */
+.btn-update {
+    background-color: #fd7e14; /* Orange */
+    color: white;
+}
+
+.btn-update:hover {
+    background-color: #e56700; /* Darker orange for hover */
+    color: white;
+}
+
+.create-prediction-link {
+    display: inline-block; /* Makes the link behave like a button */
+    font-size: 1.1em;
+    color: #65a2e7;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 12px 20px; /* Add padding for a button-like appearance */
+    border: 2px solid #db7979;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.create-prediction-link:hover {
+    background-color: #639fe4;
+    color: white;
+}
+
+.history h2{
+    display: block;  /* Ensures the title is block-level */
+    text-align: center; /* Centers the title horizontally */
+    margin-bottom: 20px; /* Adds spacing between title and table */
+}
+
+.history table {
+    width: 100%; /* Ensures the table takes up the full width */
+    border-collapse: collapse; /* Ensures borders between cells are collapsed into a single line */
+    border: 2px solid black; /* Set the outer border of the table to black */
+}
+
+.history table th, .history table td {
+    border: 1px solid black; /* Set borders of each table cell to black */
+    padding: 8px; /* Adds space inside the cells */
+    text-align: center; /* Centers text inside the cells */
+}
+
+.history table th {
+    background-color: #f2f2f2; /* light background color for table headers */
+}
+
+.highlight-column {
+    background-color: #f9fbe7; /* Soft yellow-green */
+    border-left: 2px solid #d4e157; /* adds a subtle border */
+}
+
+.btn-sm {
+    background-color: rgb(164, 47, 47);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.btn-sm:hover {
+    background-color: rgb(89, 28, 28);
+    color: white;
+    border-color: #bd2130;
+}
+
+.btn-edit {
+    background-color: rgb(173, 183, 41);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.btn-edit:hover {
+    background-color: rgb(112, 107, 15);
+    color: white;
+    border-color: #7c7010;
+}
+
+.pagination {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.pagination a {
+    padding: 10px;
+    margin: 0 5px;
+    text-decoration: none;
+    color: #000000;
+}
+
+.prev-arrow, .next-arrow {
+    font-size: 16px;
+}
+
+
+/* Add to the CSS */
+.fab-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+}
+
+.fab {
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 36px;
+    text-align: center;
+    padding: 0;
+    border: none;
+}
