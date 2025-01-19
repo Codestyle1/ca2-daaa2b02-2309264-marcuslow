@@ -37,7 +37,7 @@ url = 'https://gan-model-app-ca2.onrender.com/v1/models/saved_GAN_models'
 @app.route('/')
 @app.route('/index')
 @app.route('/home')
-def index_page():
+def home():
     return render_template('index.html')
 #Handles http://127.0.0.1:5000/predict
 @app.route("/predict", methods=['GET','POST'])

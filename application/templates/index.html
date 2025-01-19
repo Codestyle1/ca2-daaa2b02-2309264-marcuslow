@@ -1,21 +1,17 @@
-<!-- Inherits from layout.html -->
+<!-- Inherit from layout.html-->
 {% extends "layout.html" %}
-<!-- The block content replace the one encapsulated in layout.html -->
-{% block content %}
-<div class="row">
-<div class="col-md-6 offset-md-3">
-<div class="centered">
-<canvas id="canvas" width="128" height="128"></canvas>
-</div>
-<div class="centered">
-<input type="button" id="predictButton" class="btn btn-primary"
-value="Predict">
-<input type="button" id="clearButton" class="btn btn-primary"
-value="Clear">
-</div>
-<div class="centered">
-<h1 id="result"></h1>
-</div>
-</div>
+
+<!-- dark background img -->
+{% set background_image = 'images/dark_bg.jpg' %}
+
+{% block healthTextHome %}
+<div class="health">
+    <div class="health-text">
+        <h4>AI at Your Service</h4>
+        <h1><strong>Predict Letters with the Power of AI</strong></h1>
+        <!-- Button to access Login page -->
+        <a href="/predict" class="start">GET STARTED</a>
+        <a href="/predict" class="about">LEARN MORE</a> 
+    </div>
 </div>
 {% endblock %}

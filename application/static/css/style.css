@@ -66,8 +66,8 @@ header{
 }
 
 .logo img{
-    width: 100px;
-    height: auto;
+    width: 70px;
+    height: 70px;
     padding-bottom: 10px;
 }
 
@@ -123,12 +123,16 @@ header{
     margin-top: 5%;
 }
 
-.health-text h1, .health-text h4{
-    padding: 25px;
+.health-text h4{
+    padding-bottom: 50px;
+}
+
+.health-text h1{
+    padding-bottom: 50px;
 }
 
 .start, .about{
-    padding: 10px;
+    padding: 15px;
     background: transparent;
     border: 2px solid white;
     outline: none;
