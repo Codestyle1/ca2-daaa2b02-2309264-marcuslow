@@ -2,17 +2,10 @@ keras==3.8.0
 matplotlib==3.10.0
 numpy==2.0.2
 pandas==2.2.3
-<<<<<<< HEAD
-tensorflow==2.18.0
-scikit-image==0.25.0
-Flask==3.0.3
-flask_cors==5.0.0
-=======
 scikit-image==0.25.0
 Flask==3.0.3
 flask_cors==5.0.0
 tensorflow==2.18.0
->>>>>>> e095b01a300c9cab1b29fb9ff8c130327d15fb34
 Pillow==10.4.0
 gunicorn==23.0.0
 flask_wtf==1.2.1

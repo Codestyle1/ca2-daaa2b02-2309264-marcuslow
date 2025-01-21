@@ -68,7 +68,7 @@ document.getElementById('generateButton').addEventListener('click', function() {
     if (classInput && classInput.length === 1 && /^[A-Z]$/.test(classInput)) {
         // Use jQuery's AJAX method to send the request
         $.ajax({
-            url: '/generate_image',  // The route for generating the image
+            url: '/predict',  // The route for generating the image
             type: 'POST',  // POST method
             contentType: 'application/json',  // Send as JSON
             data: JSON.stringify({ class_label: classInput }),  // Send the class label

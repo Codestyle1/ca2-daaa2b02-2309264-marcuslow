@@ -22,27 +22,7 @@ import requests
 import pathlib, os
 
 #Server URL – change xyz to Practical 7 deployed URL [TAKE NOTE]
-url = 'https://gan-model-app-ca2.onrender.com/v1/models/saved_GAN_models:predict'
-
-# Sample data based on your model's input signature
-data = {
-    "signature_name": "serving_default",
-    "instances": [
-        {
-            "inputs": [[0.1] * 100],  # A simple random latent vector
-            "inputs_1": [[1] * 26]  # A simple one-hot vector
-        }
-    ]
-}
-
-headers = {"content-type": "application/json"}
-
-# Send a POST request
-response = requests.post(url, json=data, headers=headers)
-
-# Check the response
-print(response.status_code)
-print(response.json())
+url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
 
 # runs every time render_template is called
 @app.context_processor
@@ -167,6 +147,7 @@ def generate_image_from_class(class_label):
         # Print the shapes of the inputs
         print(f"Latent vector shape: {latent_vector.shape}")
         print(f"One-hot encoded class shape: {one_hot_encoded_class.shape}")
+        print(f"One-hot encoded class shape: {one_hot_encoded_class}")
 
         # Prepare the payload as a dictionary (numpy arrays should be converted to lists)
         instances = [
@@ -181,7 +162,7 @@ def generate_image_from_class(class_label):
         
         # Send the request to the GAN model
         headers = {"Content-Type": "application/json"}
-        json_response = requests.post(url, data=data, headers=headers)
+        json_response = requests.post(url_gen, data=data, headers=headers)
 
         # Check for a successful response
         if json_response.status_code == 200:
