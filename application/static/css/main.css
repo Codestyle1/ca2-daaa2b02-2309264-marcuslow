@@ -1,0 +1,124 @@
+body {
+    color: white;
+}
+
+header {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.8), rgba(34, 34, 34, 0.9));
+}
+
+.navlist a{
+    color: white;
+    border-bottom: 2px solid transparent;
+}
+
+.navlist a:hover{
+    border-bottom: 2px solid white;  /* Change to white when hovering */
+}
+
+.navlist .btnLogin-popup{
+    color: white;
+}
+
+.navlist .btnLogin-popup:hover{
+    background: white;
+    color: #162938;
+}
+
+#menu-icon{
+    color: white;
+}
+
+.start:hover, .about:hover {
+    background: white;
+    color: #162938;
+}
+
+.start, .about {
+    color: white;
+}
+
+.btn:hover {
+    background: white
+}
+
+/* For login */
+.wrapper {
+    background-color: azure;
+    box-shadow: 0 0 30px rgba(87, 79, 79, 0.5);
+}
+
+.form-box {
+    background-color: #d3d3d3; /* Light Gray background for the form */
+    border-radius: 20px;
+}
+
+.error-message {
+    color: red;
+}
+
+/* Remove border effect and transitions for profile link */
+.navlist .profile-link {
+    border-bottom: none !important;
+    transition: none !important;  /* Make sure there's no transition delay */
+}
+
+/* Predict Page */
+.predict {
+    color: black; /* Set all text within .predict to black */
+}
+
+.predict form {
+    background: rgba(208, 219, 229, 0.9);
+    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.5); /* softer white shadow */
+}
+
+
+/* Modal for BMI Calculation */
+.modal-content {
+    color: black
+}
+
+.modal-content h3{
+    text-align: center;
+}
+
+#calculateBmiBtn {
+    background-color: #3498db; 
+    color: white; 
+    border: none; 
+    border-radius: 6px; 
+    padding: 10px 20px; 
+    font-size: 16px; 
+    cursor: pointer; 
+    transition: background-color 0.3s ease; 
+}
+
+#calculateBmiBtn:hover {
+    background-color: #2980b9; /* Darker shade on hover */
+}
+
+
+/* ************************************************** */
+/* History Page */
+/* ************************************************** */
+.history {
+    background: rgba(208, 219, 229, 0.9);
+    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.5); /* softer white shadow */
+}
+
+/* Styles for the highlight row */
+.highlight-row{
+    background-color: rgb(168, 224, 124); /* Green for Create */
+}
+
+.pagination {
+    background-color: #2980b9;
+}
+
+.pagination:hover {
+    background-color: #a88686;
+}
+
+
+
+

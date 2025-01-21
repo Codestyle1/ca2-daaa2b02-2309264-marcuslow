@@ -1,0 +1,76 @@
+<!-- Inherit from layout.html-->
+{% extends "layout.html" %}
+
+{% block title %}Login{% endblock %}
+
+<!-- mp4 video downloaded from canva -->
+{% set background_image = 'images/dark_bg.jpg' %}
+
+{% block login %}
+<div class="wrapper">
+
+    <!-- Signup Form -->
+    <div class="form-box register">
+        <h2>Sign Up</h2>
+        <form method="POST" action="{{ url_for('signup') }}">
+            {{ signup_form.hidden_tag() }}
+            
+            <!-- Username Field -->
+            <div class="input-box">
+                <span class="icon"><ion-icon name="person"></ion-icon></span>
+                {{ signup_form.username(class_='form-control', placeholder='Username', required=False) }}
+
+                <!-- Error/Missing -->
+                {% for error in signup_form.username.errors %}
+                    <span class="error-message">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <!-- Email Field -->
+            <div class="input-box">
+                <span class="icon"><ion-icon name="mail"></ion-icon></span>
+                {{ signup_form.email(class_='form-control', placeholder='Email', required=False) }}
+
+                <!-- Error/Missing -->
+                {% for error in signup_form.email.errors %}
+                    <span class="error-message">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <!-- Password Field -->
+            <div class="input-box">
+                {{ signup_form.password(class_='form-control', placeholder='Password', id='password', required=False) }}
+                <span class="eye-icon" id="togglePassword">
+                    <ion-icon name="eye-off" id="eyeIcon"></ion-icon>
+                </span>
+
+                <!-- Error/Missing-->
+                {% for error in signup_form.password.errors %}
+                    <span class="error-message">{{ error }}</span>
+                {% endfor %}
+            </div>
+            
+            <!-- Confirm Password Field -->
+            <div class="input-box">
+                {{ signup_form.confirm_password(class_='form-control', placeholder='Confirm Password', id='confirm_password', required=False) }}
+                <span class="eye-icon" id="toggleConfirmPassword">
+                    <ion-icon name="eye-off" id="eyeConfirmIcon"></ion-icon>
+                </span>
+                
+                <!-- Error/Missing-->
+                {% for error in signup_form.confirm_password.errors %}
+                    <span class="error-message">{{ error }}</span>
+                {% endfor %}
+            </div>
+            
+            <!-- Sign Up button -->
+            <button type="submit" name="signup" class="btn">Register</button>
+        </form>
+        <div class="login-register">
+            <p>Already have an account? 
+                <a href="{{ url_for('login') }}" class="login-link">Login here</a>
+            </p>
+        </div>
+    </div>
+
+{% endblock %}
