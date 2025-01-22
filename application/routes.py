@@ -144,22 +144,25 @@ def generate_image_from_class(class_label):
         # Construct the one-hot encoded vector for the class
         one_hot_encoded_class = np.array([1.0 if i == class_index else 0.0 for i in range(26)], dtype=np.float32)  # Shape should be (1, 26)
 
+        # Ensure the shape is (1, 26)
+        one_hot_encoded_class = one_hot_encoded_class.reshape(1, -1)  # Shape: (1, 26)
+
         # Print the shapes of the inputs
         print(f"Latent vector shape: {latent_vector.shape}")
         print(f"One-hot encoded class shape: {one_hot_encoded_class.shape}")
         print(f"One-hot encoded class shape: {one_hot_encoded_class}")
 
         # Prepare the payload as a dictionary (numpy arrays should be converted to lists)
-        instances = [
-            {
-                "inputs": latent_vector.tolist(),  # Shape should be (1, 100)
-                "inputs_1": one_hot_encoded_class.tolist()  # Shape should be (1, 26)
-            }
-        ]
-        
+        instances = [{
+            "inputs": latent_vector.astype(np.float32).tolist(),  # Ensure dtype is float32
+            "inputs_1": one_hot_encoded_class.astype(np.float32).tolist()  # Ensure dtype is float32
+        }]
+
         # Serialize the payload into JSON format
         data = json.dumps({"signature_name": "serving_default", "instances": instances})
         
+        print(data)
+
         # Send the request to the GAN model
         headers = {"Content-Type": "application/json"}
         json_response = requests.post(url_gen, data=data, headers=headers)
