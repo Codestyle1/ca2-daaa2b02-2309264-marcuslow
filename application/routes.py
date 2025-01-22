@@ -154,8 +154,8 @@ def generate_image_from_class(class_label):
 
         # Prepare the payload as a dictionary (numpy arrays should be converted to lists)
         instances = [{
-            "inputs": latent_vector.astype(np.float32).tolist(),  # Ensure dtype is float32
-            "inputs_1": one_hot_encoded_class.astype(np.float32).tolist()  # Ensure dtype is float32
+            "input_2": latent_vector.astype.tolist(),  # Ensure dtype is float32
+            "input_3": one_hot_encoded_class.astype.tolist()  # Ensure dtype is float32
         }]
 
         # Serialize the payload into JSON format
