@@ -24,6 +24,13 @@ import pathlib, os
 #Server URL – change xyz to Practical 7 deployed URL [TAKE NOTE]
 url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
 
+# Path to store generated images
+IMAGE_DIR = 'static/images/gan_images/'
+
+# Ensure the directory exists
+if not os.path.exists(IMAGE_DIR):
+    os.makedirs(IMAGE_DIR)
+
 # runs every time render_template is called
 @app.context_processor
 def inject_user_logged_in():
@@ -118,6 +125,7 @@ def logout():
 
 # Handle http://127.0.0.1:5000/predict
 @app.route("/predict", methods=['GET', 'POST'])
+@cross_origin(origin='localhost',headers=['Content-Type','Authorization'])
 def predict():
     img_base64 = None  # Variable to store generated image (base64 string)
     
@@ -126,7 +134,6 @@ def predict():
         class_label = request.form.get('class_label')
         
         if class_label and len(class_label) == 1 and class_label.isalpha():
-            print(f"Received class label: {class_label}")
             img_base64 = generate_image_from_class(class_label)
         else:
             flash('Please enter a valid class label (single letter A-Z)', 'danger')
@@ -139,23 +146,15 @@ def generate_image_from_class(class_label):
         class_index = ord(class_label.lower()) - ord('a')
 
         # Generate a 100-dimensional latent vector with random floats
-        latent_vector = np.random.rand(1, 100).astype(np.float32)  # Shape should be (1, 100)
+        latent_vector = np.random.rand(100).astype(np.float32)  # Shape should be (1, 100)
         
         # Construct the one-hot encoded vector for the class
         one_hot_encoded_class = np.array([1.0 if i == class_index else 0.0 for i in range(26)], dtype=np.float32)  # Shape should be (1, 26)
 
-        # Ensure the shape is (1, 26)
-        one_hot_encoded_class = one_hot_encoded_class.reshape(1, -1)  # Shape: (1, 26)
-
-        # Print the shapes of the inputs
-        print(f"Latent vector shape: {latent_vector.shape}")
-        print(f"One-hot encoded class shape: {one_hot_encoded_class.shape}")
-        print(f"One-hot encoded class shape: {one_hot_encoded_class}")
-
         # Prepare the payload as a dictionary (numpy arrays should be converted to lists)
         instances = [{
-            "input_2": latent_vector.astype.tolist(),  # Ensure dtype is float32
-            "input_3": one_hot_encoded_class.astype.tolist()  # Ensure dtype is float32
+            "input_3": one_hot_encoded_class.astype(np.float32).tolist(),
+            "input_2": latent_vector.astype(np.float32).tolist()
         }]
 
         # Serialize the payload into JSON format
@@ -169,12 +168,38 @@ def generate_image_from_class(class_label):
 
         # Check for a successful response
         if json_response.status_code == 200:
-            # Parse the JSON response to get the predictions
+            # Parse the JSON response to get the predictions (image data)
             predictions = json.loads(json_response.text)['predictions']
 
-            return predictions
+            # Assuming the predictions contain the image data as a 4D array: [batch_size, height, width, channels]
+            image_array = np.array(predictions[0])  # Get the first image in the batch
+
+            # Ensure the image is 28x28 with a single channel (grayscale)
+            image_array = image_array.squeeze(axis=-1)  # Remove the last channel dimension (1) if it exists
+            
+            # Check the shape of the image
+            print(f"Image shape after squeeze: {image_array.shape}")
+
+            # Ensure the pixel values are in the range [0, 255] and cast to uint8
+            image_array = np.clip(image_array * 255, 0, 255).astype(np.uint8)
+
+            # Create a PIL Image from the numpy array
+            img = Image.fromarray(image_array)
+
+            # Save the image to the static directory
+            image_filename = f"generated_image_{class_label}.png"
+            image_path = os.path.join(IMAGE_DIR, image_filename)
+            img.save(image_path)
+
+            # Optionally, convert the image to base64 for embedding directly into HTML
+            buffered = BytesIO()
+            img.save(buffered, format="PNG")
+            img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+
+            # Return the base64 image string (to embed in the HTML) or the image URL
+            return img_base64  # You can also return image_path if you want to use the URL
         else:
-            print(f"Error with GAN model API response: {json_response.status_code}, {json_response.text}")
+            print(f"Error with GAN model API response: {json_response.status_code}, {json_response.content}")
             return None
     except Exception as e:
         print(f"Error generating image: {e}")

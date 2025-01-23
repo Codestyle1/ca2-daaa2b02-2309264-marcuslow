@@ -14,4 +14,3 @@ tensorflow_model_server \
 --model_base_path=${MODEL_BASE_PATH}/${MODEL_NAME} \
 "$@"' > /usr/bin/tf_serving_entrypoint.sh \
 && chmod +x /usr/bin/tf_serving_entrypoint.sh
->>>>>>> e095b01a300c9cab1b29fb9ff8c130327d15fb34

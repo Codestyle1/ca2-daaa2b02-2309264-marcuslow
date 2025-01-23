@@ -15,8 +15,7 @@
     </form>
 
     {% if img_base64 %}
-        <h2>Generated Image:</h2>
-        <!-- Display the image if it's generated -->
-        <img src="data:image/png;base64,{{ img_base64 }}" alt="Generated Image">
+        <h3>Generated Image</h3>
+        <img src="{{ url_for('static', filename='generated_images/' + img_base64) }}" alt="Generated Image" />
     {% endif %}
 {% endblock %}

@@ -108,9 +108,12 @@
             {% endblock %}
 
             {% block healthTextHome %}
-            {% endblock %}
-        </div>
+                {% if img_base64 %}
 
+                {% endif %}
+            {% endblock %}
+
+        </div>
     </div>
 
     <div id="loading-screen" class="loading-screen">
