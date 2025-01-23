@@ -1,6 +1,6 @@
 FROM tensorflow/serving:2.10.0
 # copy the contents of saved_GAN_models into /saved_GAN_models in the container.
-COPY ./CA2_Part_A/saved_GAN_models/generator /saved_GAN_models/generator/1
+COPY ./CA2_Part_A/saved_GAN_models/generator /saved_GAN_models/generator
 # RUN apt-get -y update
 # && apt-get install -y git && git reset --hard
 ENV MODEL_NAME=generator MODEL_BASE_PATH=/saved_GAN_models
