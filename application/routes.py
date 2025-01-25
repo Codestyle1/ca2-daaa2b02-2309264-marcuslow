@@ -5,16 +5,8 @@ from application.forms import LoginForm, SignupForm
 from application.models import Login
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask_cors import CORS, cross_origin
-from tensorflow.keras.preprocessing import image
-import traceback
-from PIL import Image, ImageOps
+from PIL import Image
 import numpy as np
-import tensorflow.keras.models
-import re
-import base64
-from io import BytesIO
-# from tensorflow.keras.datasets.mnist import load_data
 import json
 import numpy as np
 import requests
@@ -130,7 +122,6 @@ def logout():
 
 # Handle http://127.0.0.1:5000/predict
 @app.route("/predict", methods=['GET', 'POST'])
-@cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'])
 def predict():
     img_filename = None  # Variable to store the generated image filename
 
