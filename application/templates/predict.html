@@ -9,13 +9,23 @@
 
     <!-- Form to input class label -->
     <form method="POST" action="{{ url_for('predict') }}">
-        <label for="class_label">Enter Class Label (A-Z):</label>
-        <input type="text" id="class_label" name="class_label" maxlength="1" required>
-        <button type="submit">Generate</button>
+        <div>
+            <label for="class_label">Enter Class Label (A-Z):</label>
+        </div>
+        <div>
+            <input type="text" id="class_label" name="class_label" maxlength="1" required>
+        </div>
+        <div>
+            <button type="submit">Generate</button>
+        </div>
     </form>
 
-    {% if img_base64 %}
+    {% if img_filename %}
         <h3>Generated Image</h3>
-        <img src="{{ url_for('static', filename='generated_images/' + img_base64) }}" alt="Generated Image" />
+        <img src="{{ url_for('serve_gen_images', filename=img_filename) }}" alt="Generated Image" />
+    {% else %}
+        <p>No image generated.</p>
     {% endif %}
+        <button type="submit">Save Image?</button>
+        <button type="submit">Generate Again</button>
 {% endblock %}

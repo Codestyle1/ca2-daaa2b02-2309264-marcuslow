@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 FROM tensorflow/serving:latest
 # copy the contents of saved_GAN_models into /saved_GAN_models in the container.
 COPY ./CA2_Part_A/saved_GAN_models/generator /saved_GAN_models/generator

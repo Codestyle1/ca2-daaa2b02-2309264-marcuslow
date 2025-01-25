@@ -14,22 +14,27 @@ import tensorflow.keras.models
 import re
 import base64
 from io import BytesIO
-import io
 # from tensorflow.keras.datasets.mnist import load_data
 import json
 import numpy as np
 import requests
-import pathlib, os
+import os
+from flask import send_from_directory
 
 #Server URL – change xyz to Practical 7 deployed URL [TAKE NOTE]
 url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
 
-# Path to store generated images
-IMAGE_DIR = 'static/images/gan_images/'
+# Path to the gen_images folder
+IMAGE_DIR = os.path.join(os.path.dirname(__file__), 'gen_images')
 
 # Ensure the directory exists
 if not os.path.exists(IMAGE_DIR):
     os.makedirs(IMAGE_DIR)
+
+# Route to serve files from the gen_images folder
+@app.route('/gen_images/<filename>')
+def serve_gen_images(filename):
+    return send_from_directory(IMAGE_DIR, filename)
 
 # runs every time render_template is called
 @app.context_processor
@@ -125,20 +130,20 @@ def logout():
 
 # Handle http://127.0.0.1:5000/predict
 @app.route("/predict", methods=['GET', 'POST'])
-@cross_origin(origin='localhost',headers=['Content-Type','Authorization'])
+@cross_origin(origin='localhost', headers=['Content-Type', 'Authorization'])
 def predict():
-    img_base64 = None  # Variable to store generated image (base64 string)
-    
+    img_filename = None  # Variable to store the generated image filename
+
     if request.method == 'POST':
         # Retrieve the class label input from the form
         class_label = request.form.get('class_label')
-        
+
         if class_label and len(class_label) == 1 and class_label.isalpha():
-            img_base64 = generate_image_from_class(class_label)
+            img_filename = generate_image_from_class(class_label)
         else:
             flash('Please enter a valid class label (single letter A-Z)', 'danger')
 
-    return render_template('predict.html', img_base64=img_base64)
+    return render_template('predict.html', img_filename=img_filename)
 
 def generate_image_from_class(class_label):
     try:
@@ -147,7 +152,7 @@ def generate_image_from_class(class_label):
 
         # Generate a 100-dimensional latent vector with random floats
         latent_vector = np.random.rand(100).astype(np.float32)  # Shape should be (1, 100)
-        
+
         # Construct the one-hot encoded vector for the class
         one_hot_encoded_class = np.array([1.0 if i == class_index else 0.0 for i in range(26)], dtype=np.float32)  # Shape should be (1, 26)
 
@@ -159,7 +164,7 @@ def generate_image_from_class(class_label):
 
         # Serialize the payload into JSON format
         data = json.dumps({"signature_name": "serving_default", "instances": instances})
-        
+
         print(data)
 
         # Send the request to the GAN model
@@ -176,7 +181,7 @@ def generate_image_from_class(class_label):
 
             # Ensure the image is 28x28 with a single channel (grayscale)
             image_array = image_array.squeeze(axis=-1)  # Remove the last channel dimension (1) if it exists
-            
+
             # Check the shape of the image
             print(f"Image shape after squeeze: {image_array.shape}")
 
@@ -186,18 +191,13 @@ def generate_image_from_class(class_label):
             # Create a PIL Image from the numpy array
             img = Image.fromarray(image_array)
 
-            # Save the image to the static directory
+            # Save the image to the gen_images directory
             image_filename = f"generated_image_{class_label}.png"
             image_path = os.path.join(IMAGE_DIR, image_filename)
             img.save(image_path)
 
-            # Optionally, convert the image to base64 for embedding directly into HTML
-            buffered = BytesIO()
-            img.save(buffered, format="PNG")
-            img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
-
-            # Return the base64 image string (to embed in the HTML) or the image URL
-            return img_base64  # You can also return image_path if you want to use the URL
+            # Return the filename of the saved image
+            return image_filename
         else:
             print(f"Error with GAN model API response: {json_response.status_code}, {json_response.content}")
             return None
