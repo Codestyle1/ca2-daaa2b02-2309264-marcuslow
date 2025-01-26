@@ -7,25 +7,85 @@
 {% block healthTextHome %}
 <h1>Generate Image</h1>
 
-    <!-- Form to input class label -->
-    <form method="POST" action="{{ url_for('predict') }}">
-        <div>
-            <label for="class_label">Enter Class Label (A-Z):</label>
+<div class="wrapper" id="wrapper_predict">
+    <div class="row">
+        <!-- Column for the form -->
+        <div class="col-6">
+            <form method="POST" action="{{ url_for('predict') }}" id="generateForm">
+                <div class="form-group">
+                    <label for="class_label">Enter Class Label (A-Z):</label>
+                    <input type="text" id="class_label" name="class_label" maxlength="1" class="form-control" required>
+                </div>
+                <div class="form-group mb-5">
+                    <button type="submit" class="btn-generate">Generate</button>
+                </div>
+            </form>
+            <!-- Random Alphabet Button -->
+            <div class="form-group">
+                <label for="class_label_random">Generate Random Alphabets:</label>
+                <button type="button" id="random-alphabet-btn" class="btn-generate">Click Here!</button>
+            </div>
         </div>
-        <div>
-            <input type="text" id="class_label" name="class_label" maxlength="1" required>
-        </div>
-        <div>
-            <button type="submit">Generate</button>
-        </div>
-    </form>
 
-    {% if img_filename %}
-        <h3>Generated Image</h3>
-        <img src="{{ url_for('serve_gen_images', filename=img_filename) }}" alt="Generated Image" />
-    {% else %}
-        <p>No image generated.</p>
-    {% endif %}
-        <button type="submit">Save Image?</button>
-        <button type="submit">Generate Again</button>
+        <!-- Column for the generated image and text -->
+        <div class="col-6">
+            <p id="input-message">
+                {% if img_filename %}
+                    {% if random_generate_button %}
+                        Randomly Generated Input: '{{ class_label }}'
+                    {% else %}
+                        Your Input: '{{ class_label }}'
+                    {% endif %}
+                {% endif %}
+            </p>
+
+            <img id="generated-image" src="
+                {% if img_filename %}
+                    {{ url_for('serve_gen_images', filename=img_filename) }}
+                {% else %}
+                    {{ url_for('static', filename='images/empty_img_placeholder.png') }}
+                {% endif %}
+            " alt="Generated Image" class="img-fluid" />
+
+            <!-- Buttons directly under the image -->
+            <div class="d-flex justify-content-center mt-3">
+                <button type="submit" class="btn_predict me-2 {% if not img_filename %}hidden{% endif %}">Save Image</button>
+                <button type="submit" id="generate-again-btn" class="btn_predict {% if not img_filename or random_generate_button %}hidden{% endif %}">Generate Again</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('random-alphabet-btn').addEventListener('click', function() {
+    // Make an AJAX request to the server
+    fetch("{{ url_for('predict_random') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}) // No data needed, just trigger the random generation
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the input message
+            document.getElementById('input-message').textContent = `Randomly Generated Input: '${data.class_label}'`;
+
+            // Update the image source
+            document.getElementById('generated-image').src = data.image_url;
+
+            // Show the "Save Image" button and hide the "Generate Again" button
+            document.querySelector('.btn_predict.me-2').classList.remove('hidden'); // Show Save Image
+            document.getElementById('generate-again-btn').classList.add('hidden'); // Hide Generate Again
+        } else {
+            alert('Failed to generate image.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while generating the image.');
+    });
+});
+</script>
 {% endblock %}

@@ -40,7 +40,6 @@ header{
     color: white;
     text-align: center;
     color: #333;
-    background-color: rgba(172, 159, 159, 0.8);  /* Slightly transparent background */
     font-weight: bold;
     border-radius: 5px;
     opacity: 0;  /* Initial opacity */
@@ -619,4 +618,62 @@ form legend {
     text-align: center;
     padding: 0;
     border: none;
+}
+
+/* Predict HMTL */
+/* Ensure the wrapper uses Flexbox and centers content */
+#wrapper_predict {
+    display: flex;
+    align-items: center; /* Vertically center content */
+    justify-content: center; /* Horizontally center content */
+    width: 800px;
+    padding: 20px;
+    border-radius: 10px;
+    min-height: 500px; /* Ensure a minimum height */
+    height: 100%; /* Make sure it takes full height */
+}
+
+/* Ensure the row inside the wrapper centers its columns */
+#wrapper_predict .row {
+    display: flex;
+    align-items: center; /* Vertically center columns */
+    width: 100%; /* Ensure the row takes full width */
+}
+
+/* Ensure the form column takes full height */
+#wrapper_predict .col-6 {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Vertically center form content */
+    height: 100%; /* Take full height */
+}
+
+/* Custom CSS for buttons */
+.btn_predict, .btn-generate {
+    padding: 10px 20px; /* Add padding to make buttons larger */
+    font-size: 16px; /* Increase font size */
+    background-color: #808080; /* Button background color */
+    color: white; /* Button text color */
+    border: none; /* Remove border */
+    border-radius: 5px; /* Add rounded corners */
+    cursor: pointer; /* Change cursor to pointer on hover */
+    transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+.btn_predict:hover, .btn-generate:hover {
+    background-color: #5a6268; /* Darker background on hover */
+}
+
+/* Ensure the buttons are centered and spaced properly */
+.d-flex.justify-content-center {
+    gap: 10px; /* Add spacing between buttons */
+}
+
+/* Specific style for the Generate button */
+.btn-generate {
+    width: 100%; /* Full width */
+}
+
+.hidden {
+    display: none;
 }

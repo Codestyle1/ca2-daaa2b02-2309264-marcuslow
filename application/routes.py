@@ -12,12 +12,13 @@ import numpy as np
 import requests
 import os
 from flask import send_from_directory
+import random
 
 # Server URL (if not on host computer)
 # url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
 
 # If you are on your local computer
-url_gen = 'http://localhost:8501/v1/models/generator'
+url_gen = 'http://localhost:8501/v1/models/generator:predict'
 
 # Path to the gen_images folder
 IMAGE_DIR = os.path.join(os.path.dirname(__file__), 'gen_images')
@@ -51,11 +52,16 @@ def home():
     user_logged_in = session.get('user_logged_in', False)
     return render_template("index.html", user_logged_in=user_logged_in)  # Use a template for your main page
 
-
 # Login
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'  # Redirect to 'login' route if not logged in
 login_manager.login_message = "Please log in to access this page."
+
+# Custom unauthorized handler for Flask-Login
+@login_manager.unauthorized_handler
+def unauthorized():
+    flash('You need to log in to access this page.', 'danger')  # Flash a message
+    return redirect(url_for('login'))  # Redirect to the login page
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -89,7 +95,6 @@ def login():
 
     return render_template('login.html', login_form=login_form)
 
-# Handle http://127.0.0.1:5000/signup
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     signup_form = SignupForm()
@@ -104,12 +109,26 @@ def signup():
         if Login.query.filter_by(email=email).first():
             flash('Email is already in use. Please log in instead.', 'danger')
         else:
+            # Hash the password
             hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+            
+            # Create a new user
             new_user = Login(username=username, email=email, password_hash=hashed_password)
+            
+            # Add the new user to the database
             db.session.add(new_user)
             db.session.commit()
-            flash('Signup successful! You can now log in.', 'success')
-            return redirect(url_for('home'))  # Redirect to the login page
+
+            # Log the user in immediately after signup
+            login_user(new_user)  # Authenticate the user and create a session
+
+            # Update the session to reflect that the user is logged in
+            session['user_id'] = new_user.id
+            session['username'] = new_user.username
+            session['user_logged_in'] = True
+
+            flash('Signup successful! You are now logged in.', 'success')
+            return redirect(url_for('home'))  # Redirect to the home page
 
     return render_template('signup.html', signup_form=signup_form)
 
@@ -125,20 +144,45 @@ def logout():
 
 # Handle http://127.0.0.1:5000/predict
 @app.route("/predict", methods=['GET', 'POST'])
+@login_required
 def predict():
     img_filename = None  # Variable to store the generated image filename
+    class_label = None # Variable to store the user's input
 
     if request.method == 'POST':
         # Retrieve the class label input from the form
-        class_label = request.form.get('class_label')
+        class_label = request.form.get('class_label').lower()
 
         if class_label and len(class_label) == 1 and class_label.isalpha():
             img_filename = generate_image_from_class(class_label)
         else:
             flash('Please enter a valid class label (single letter A-Z)', 'danger')
 
-    return render_template('predict.html', img_filename=img_filename)
+    return render_template('predict.html', img_filename=img_filename, class_label=class_label)
 
+# Handle http://127.0.0.1:5000/predict_random
+@app.route('/predict_random', methods=['POST'])
+def predict_random():
+    # Generate a random letter (a-z)
+    class_label = random.choice('abcdefghijklmnopqrstuvwxyz')
+
+    # Generate the image using the random letter
+    img_filename = generate_image_from_class(class_label)
+
+    if img_filename:
+        # Return the image URL and success status
+        return jsonify({
+            'success': True,
+            'class_label': class_label,  # Send the random letter back to the client
+            'image_url': url_for('serve_gen_images', filename=img_filename),
+            'random_generate_button': True  # Indicate that this was a random generation
+        })
+    else:
+        return jsonify({
+            'success': False,
+            'error': 'Failed to generate image.',
+        })
+    
 def generate_image_from_class(class_label):
     try:
         # Convert class label (e.g., "S") to an integer index (A=0, ..., Z=25)
@@ -159,8 +203,6 @@ def generate_image_from_class(class_label):
         # Serialize the payload into JSON format
         data = json.dumps({"signature_name": "serving_default", "instances": instances})
 
-        print(data)
-
         # Send the request to the GAN model
         headers = {"Content-Type": "application/json"}
         json_response = requests.post(url_gen, data=data, headers=headers)
@@ -176,14 +218,14 @@ def generate_image_from_class(class_label):
             # Ensure the image is 28x28 with a single channel (grayscale)
             image_array = image_array.squeeze(axis=-1)  # Remove the last channel dimension (1) if it exists
 
-            # Check the shape of the image
-            print(f"Image shape after squeeze: {image_array.shape}")
-
             # Ensure the pixel values are in the range [0, 255] and cast to uint8
             image_array = np.clip(image_array * 255, 0, 255).astype(np.uint8)
 
             # Create a PIL Image from the numpy array
             img = Image.fromarray(image_array)
+
+            # Resize the image to 600x600 pixels
+            img = img.resize((300, 300), Image.Resampling.LANCZOS)  # Use high-quality resampling
 
             # Save the image to the gen_images directory
             image_filename = f"generated_image_{class_label}.png"
