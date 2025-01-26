@@ -13,9 +13,11 @@ import requests
 import os
 from flask import send_from_directory
 
-#Server URL
-url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
-url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
+# Server URL (if not on host computer)
+# url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
+
+# If you are on your local computer
+url_gen = 'http://localhost:8501/v1/models/generator'
 
 # Path to the gen_images folder
 IMAGE_DIR = os.path.join(os.path.dirname(__file__), 'gen_images')
