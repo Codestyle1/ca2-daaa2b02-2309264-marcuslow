@@ -13,7 +13,8 @@ import requests
 import os
 from flask import send_from_directory
 
-#Server URL – change xyz to Practical 7 deployed URL [TAKE NOTE]
+#Server URL
+url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
 url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
 
 # Path to the gen_images folder
