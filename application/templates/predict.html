@@ -1,12 +1,11 @@
-<!-- Inherit from layout.html-->
+<!-- Inherit from layout.html -->
 {% extends "layout.html" %}
-
 <!-- Dark background img -->
 {% set background_image = 'images/dark_bg.jpg' %}
-
 {% block healthTextHome %}
-<h1>Generate Image</h1>
 
+<!-- Flash Messages Section -->
+<h1>Generate Image</h1>
 <div class="wrapper" id="wrapper_predict">
     <div class="row">
         <!-- Column for the form -->
@@ -26,7 +25,6 @@
                 <button type="button" id="random-alphabet-btn" class="btn-generate">Click Here!</button>
             </div>
         </div>
-
         <!-- Column for the generated image and text -->
         <div class="col-6">
             <p id="input-message">
@@ -38,7 +36,6 @@
                     {% endif %}
                 {% endif %}
             </p>
-
             <img id="generated-image" src="
                 {% if img_filename %}
                     {{ url_for('serve_gen_images', filename=img_filename) }}
@@ -46,46 +43,38 @@
                     {{ url_for('static', filename='images/empty_img_placeholder.png') }}
                 {% endif %}
             " alt="Generated Image" class="img-fluid" />
-
             <!-- Buttons directly under the image -->
             <div class="d-flex justify-content-center mt-3">
-                <button type="submit" class="btn_predict me-2 {% if not img_filename %}hidden{% endif %}">Save Image</button>
-                <button type="submit" id="generate-again-btn" class="btn_predict {% if not img_filename or random_generate_button %}hidden{% endif %}">Generate Again</button>
+                <button type="button" id="save-image-btn" class="btn_predict me-2 {% if not img_filename %}hidden{% endif %}" data-bs-toggle="modal" data-bs-target="#saveImageModal">Save Image</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save Image Modal -->
+<div class="modal fade" id="saveImageModal" tabindex="-1" aria-labelledby="saveImageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content custom-modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title custom-modal-title" id="saveImageModalLabel">Confirm Save</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                Are you sure you want to save this image?
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <!-- Cancel Button -->
+                <button type="button" class="btn custom-btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                <!-- Save Button -->
+                <button type="button" id="confirm-save-btn" class="btn custom-btn-save">Save</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-document.getElementById('random-alphabet-btn').addEventListener('click', function() {
-    // Make an AJAX request to the server
-    fetch("{{ url_for('predict_random') }}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}) // No data needed, just trigger the random generation
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update the input message
-            document.getElementById('input-message').textContent = `Randomly Generated Input: '${data.class_label}'`;
-
-            // Update the image source
-            document.getElementById('generated-image').src = data.image_url;
-
-            // Show the "Save Image" button and hide the "Generate Again" button
-            document.querySelector('.btn_predict.me-2').classList.remove('hidden'); // Show Save Image
-            document.getElementById('generate-again-btn').classList.add('hidden'); // Hide Generate Again
-        } else {
-            alert('Failed to generate image.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while generating the image.');
-    });
-});
+    const predictRandomUrl = "{{ url_for('predict_random') }}";
+    const predictUrl = "{{ url_for('predict') }}";
 </script>
+
 {% endblock %}

@@ -13,7 +13,7 @@ from flask_sqlalchemy import SQLAlchemy
 # is_anonymous: Always False for logged-in users.
 # get_id: Returns the id of the user (used to uniquely identify users in the session).
 
-# Function to get the current time in Singapore Time
+# Function to get the current time in Singapore Time (combined date and time for DB as datetime)
 def get_singapore_time():
     # Get the current time in UTC
     utc_now = datetime.utcnow()
@@ -21,8 +21,15 @@ def get_singapore_time():
     singapore_timezone = pytz.timezone('Asia/Singapore')
     # Convert UTC time to Singapore Time
     singapore_time = utc_now.replace(tzinfo=pytz.utc).astimezone(singapore_timezone)
-    # Remove timezone information to store a naive datetime (if your database doesn't support timezone-aware datetimes)
-    return singapore_time.replace(tzinfo=None)
+
+    # Extract the date and time separately
+    date_for_db = singapore_time.date()  # This will give just the date (yyyy-mm-dd)
+    time_for_db = singapore_time.time().replace(second=0, microsecond=0)  # This will give just the time (hh:mm)
+
+    # Combine the date and time into a datetime object (without seconds)
+    combined_datetime = datetime.combine(date_for_db, time_for_db)
+
+    return combined_datetime
 
 # Each login user can have multiple instances of HealthInsurancePrediction
 class Login(db.Model, UserMixin):
@@ -45,3 +52,15 @@ class Login(db.Model, UserMixin):
     
     def get_id(self):
         return str(self.id)
+
+# Use backblaze to store the image (inside URL)
+# use the URL to show the image on frontend
+class ImagePrediction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('login.id'), nullable=False)
+    class_label = db.Column(db.String(1), nullable=False)  # The class label (e.g., "A", "B")
+    image_filename = db.Column(db.String(255), nullable=False)  # Filename of the generated image inside Blackblaze
+    predicted_on = db.Column(db.DateTime, nullable=False, default=get_singapore_time)
+
+    def __repr__(self):
+        return f"<ImagePrediction {self.id} for User {self.user_id}>"

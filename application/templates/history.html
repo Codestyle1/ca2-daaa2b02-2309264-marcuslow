@@ -1,13 +1,11 @@
 {% extends 'layout.html' %}
-
-<!-- health background img (source: https://www.vecteezy.com/free-vector/medical-background) -->
-{% set background_image = 'images/health_bg.jpg' %}
+<!-- Dark background img -->
+{% set background_image = 'images/dark_bg.jpg' %}
 
 {% block content %}
-    <h2>Health Prediction History</h2>
-
+    <h2>Image Generation History</h2>
     <!-- If no predictions, display a message and link to create a new prediction -->
-    {% if not predictions %}
+    {% if not predictions.items %}
         <!-- Add a dynamic greeting message with the username -->
         <div class="no-history-container">
             <p class="intro-text">Hello, {{ username }}!</p>
@@ -15,91 +13,75 @@
             <p><a href="{{ url_for('predict') }}" class="create-prediction-link">Create a new prediction?</a></p>
         </div>
     {% else %}
-        <p class="intro-text">Hello, {{ username }}! Below is your personal health prediction history:</p>
-        <div class="history">
-            <table class="table table-bordered">
-                <thead>
+        <p class="intro-text">Hello, {{ username }}! Below is your personal Image Generation history:</p>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Image</th>
+                    <th scope="col">Predicted On</th>
+                    <th scope="col">Class Label</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prediction in predictions %}
                     <tr>
-                        <th></th>
-                        <th>ID</th>
-                        <th>Age</th>
-                        <th>BMI</th>
-                        <th>Gender</th>
-                        <th>Children</th>
-                        <th>Smoker</th>
-                        <th>Region</th>
-                        <th>Health Insurance</th>
-                        <th>Timestamp</th>
-                        <th></th>
+                        <td>
+                            <!-- Display the image -->
+                            <img src="{{ prediction.image_url }}" alt="Generated Image" style="max-width: 100px;">
+                        </td>
+                        <td>{{ prediction.predicted_on }}</td>
+                        <td>{{ prediction.class_label }}</td>
+                        <td>
+                            <!-- Add any actions you want here, e.g., delete, edit, etc. -->
+                            <a href="#" class="btn btn-sm btn-danger">Delete</a>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    {% set offset = (page - 1) * 5 %} <!-- Calculate the offset based on the page number -->
-
-                    {% for prediction in predictions %}
-                        <tr class="{% if prediction.id == updated_id %}highlight-row{% endif %}">
-                            <td>
-                                <form action="{{ url_for('predict') }}" method="GET">
-                                    <input type="hidden" name="id" value="{{ prediction.id }}">
-                                    <input type="hidden" name="page" value="{{ request.args.get('page', 1) }}"> <!-- Add current page -->
-                                    <button type="submit" class="btn btn-edit">Edit</button>
-                                </form>
-                            </td>
-                            <!-- offset to adjust the ID -->
-                            <td>{{ offset + loop.index }}</td> <!-- Dynamically display ID based on row position -->
-                            <!-- Age column -->
-                            <td>{{ prediction.age }}</td>
-                            <!-- BMI column -->
-                            <td>{{ prediction.bmi }}</td>
-                            <!-- Gender column -->
-                            <td>{{ prediction.gender }}</td>
-                            <!-- Children column -->
-                            <td>{{ prediction.children }}</td>
-                            <!-- Smoker column -->
-                            <td>{{ prediction.smoker }}</td>
-                            <!-- Region column -->
-                            <td>{{ prediction.region }}</td>
-                            <!-- Health Prediction column -->
-                            <td class="highlight-column">${{ prediction.prediction }}</td>
-                            <!-- Time Predicted on -->
-                            <td>{{ prediction.predicted_on.strftime("%d %b %y %H:%M") }}</td>
-                            <td>
-                                <form action="{{ url_for('delete_prediction') }}" method="POST" style="display:inline;">
-                                    <input type="hidden" name="id" value="{{ prediction.id }}">
-                                    <!-- Protect against accidental delete (2 step verify) -->
-                                    <button 
-                                        type="submit" 
-                                        class="btn btn-sm no-border" 
-                                        onclick="return confirm('Are you sure you want to delete this prediction?');">
-                                        Delete
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination controls -->
-        <div class="pagination">
-            <!-- First page link -->
-            <a href="{{ url_for('history', page=1, updated_id=updated_id) }}" class="first-arrow">First</a>
-            <!-- Previous page link -->
-            <a href="{{ url_for('history', page=prev_url, updated_id=updated_id) }}" class="prev-arrow">← Previous</a>
-            <!-- Next page link -->
-            <a href="{{ url_for('history', page=next_url, updated_id=updated_id) }}" class="next-arrow">Next →</a>
-            <!-- Last page link -->
-            <a href="{{ url_for('history', page=latest_page, updated_id=updated_id) }}" class="last-arrow">Last</a>
-        </div>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Pagination Links -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination">
+                {% if predictions.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('history', page=predictions.prev_num) }}">Previous</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                {% endif %}
+                
+                {% for page_num in predictions.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == predictions.page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('history', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if predictions.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('history', page=predictions.next_num) }}">Next</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
     {% endif %}
-
-    <!-- Floating Action Button -->
-    <div class="fab-container">
-        <form action="{{ url_for('predict') }}" method="GET">
-            <!-- Include the latest page number as a hidden input -->
-            <input type="hidden" name="page" value="{{ latest_page }}">
-            <button type="submit" class="fab btn" title="Create new prediction">+</button>
-        </form>
-    </div>
 {% endblock %}

@@ -398,210 +398,6 @@ form legend {
     float: right;
 }
 
-/* Modal styles */
-.modal {
-    display: none; /* Hidden by default, shown when needed */
-    position: fixed; /* Fixed to the viewport */
-    top: 0; /* Start from the top */
-    left: 50%; /* Horizontally centered */
-    transform: translateX(-50%); /* Center modal horizontally */
-    z-index: 9999; /* Ensure modal is above other content */
-    width: 100%; /* Full screen width */
-    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-}
-
-/* Modal content styles */
-.modal-content {
-    background-color: #fff;
-    padding: 50px;
-    border: 1px solid #888;
-    width: 50%; /* Set a width for the modal */
-    max-width: 700px; 
-    height: auto;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    position: absolute; /* Position absolutely inside the modal */
-    top: 50%; /* Adjust this value to move the modal down */
-    left: 50%;
-    transform: translateX(-50%) translateY(-50%); /* Center it vertically and horizontally */
-}
-
-/* Add margin to the input fields for spacing between label and input */
-#bmiForm div input {
-    margin-bottom: 25px; /* Adjust this value to control the space between input fields */
-}
-
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-/* Loading Spinner Styles */
-#loadingSpinner {
-    display: none;
-    width: 30px;
-    height: 30px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3498db;
-    border-radius: 50%;
-    animation: spin 2s linear infinite;
-    margin: 20px auto;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* ************************************************** */
-/* History Page */
-/* ************************************************** */
-/* Container for no history message */
-/* Center align the container content */
-.no-history-container {
-    background-color: #45505b;
-    border-radius: 8px;
-    padding: 20px;
-    margin: 30px auto;
-    text-align: center; /* Center-aligns text and inline elements */
-    max-width: 600px; /* Restrict the width for better readability */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* Title with username */
-.intro-text {
-    font-size: 1.5em;
-    font-weight: bold;
-    color: #ffffff;
-    margin-bottom: 10px;
-}
-
-/* Additional message */
-.no-history-message {
-    font-size: 1.2em;
-    color: #ffffff;
-    margin-bottom: 20px;
-}
-
-/* Styled link to prediction page */
-/* Styling for the submit button (green) */
-.btn-submit {
-    background-color: #28a745; /* Green */
-    color: white;
-}
-
-.btn-submit:hover {
-    background-color: #218838; /* Darker green for hover */
-    color: white;
-}
-
-/* Styling for the update button (orange) */
-.btn-update {
-    background-color: #fd7e14; /* Orange */
-    color: white;
-}
-
-.btn-update:hover {
-    background-color: #e56700; /* Darker orange for hover */
-    color: white;
-}
-
-.create-prediction-link {
-    display: inline-block; /* Makes the link behave like a button */
-    font-size: 1.1em;
-    color: #65a2e7;
-    text-decoration: none;
-    font-weight: bold;
-    padding: 12px 20px; /* Add padding for a button-like appearance */
-    border: 2px solid #db7979;
-    border-radius: 5px;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.create-prediction-link:hover {
-    background-color: #639fe4;
-    color: white;
-}
-
-.history h2{
-    display: block;  /* Ensures the title is block-level */
-    text-align: center; /* Centers the title horizontally */
-    margin-bottom: 20px; /* Adds spacing between title and table */
-}
-
-.history table {
-    width: 100%; /* Ensures the table takes up the full width */
-    border-collapse: collapse; /* Ensures borders between cells are collapsed into a single line */
-    border: 2px solid black; /* Set the outer border of the table to black */
-}
-
-.history table th, .history table td {
-    border: 1px solid black; /* Set borders of each table cell to black */
-    padding: 8px; /* Adds space inside the cells */
-    text-align: center; /* Centers text inside the cells */
-}
-
-.history table th {
-    background-color: #f2f2f2; /* light background color for table headers */
-}
-
-.highlight-column {
-    background-color: #f9fbe7; /* Soft yellow-green */
-    border-left: 2px solid #d4e157; /* adds a subtle border */
-}
-
-.btn-sm {
-    background-color: rgb(164, 47, 47);
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    line-height: 1.5;
-}
-
-.btn-sm:hover {
-    background-color: rgb(89, 28, 28);
-    color: white;
-    border-color: #bd2130;
-}
-
-.btn-edit {
-    background-color: rgb(173, 183, 41);
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    line-height: 1.5;
-}
-
-.btn-edit:hover {
-    background-color: rgb(112, 107, 15);
-    color: white;
-    border-color: #7c7010;
-}
-
-.pagination {
-    text-align: center;
-    margin-top: 20px;
-}
-
-.pagination a {
-    padding: 10px;
-    margin: 0 5px;
-    text-decoration: none;
-    color: #000000;
-}
-
-.prev-arrow, .next-arrow {
-    font-size: 16px;
-}
-
-
 /* Add to the CSS */
 .fab-container {
     position: fixed;
@@ -677,3 +473,100 @@ form legend {
 .hidden {
     display: none;
 }
+
+/* Center the modal vertically */
+.modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: 100vh; /* Full viewport height */
+}
+
+/* Add a smooth fade-in animation */
+.custom-modal-content {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Increase modal size */
+.modal-content {
+    padding: 20px; /* Add padding inside the modal */
+    max-width: 600px; /* Set a maximum width for the modal */
+    margin: auto; /* Center the modal horizontally */
+    border-radius: 10px; /* Rounded corners for a modern look */
+}
+
+/* Modal Header */
+.modal-header {
+    padding: 15px; /* Add padding to the header */
+    border-bottom: 1px solid #dee2e6; /* Optional: Add a border below the header */
+}
+
+/* Modal Body */
+.modal-body {
+    padding: 20px; /* Add padding to the body */
+    font-size: 18px; /* Increase font size for better readability */
+}
+
+/* Modal Footer */
+.modal-footer {
+    display: flex !important;
+    flex-direction: row !important;
+}
+
+.modal-footer .btn{
+    width: 40%;
+}
+
+.modal-footer .custom-btn-cancel {
+    border: none; /* Remove default border */
+    font-size: 16px; /* Increase font size for better visibility */
+    border-radius: 5px; /* Rounded corners */
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth hover animation */
+}
+
+.custom-btn-cancel:hover {
+    transform: scale(1.05); /* Slightly enlarge the button */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+}
+
+.modal-footer .custom-btn-save {
+    border: none; /* Remove default border */
+    font-size: 16px; /* Increase font size for better visibility */
+    border-radius: 5px; /* Rounded corners */
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth hover animation */
+}
+
+.custom-btn-save:hover {
+    transform: scale(1.05); /* Slightly enlarge the button */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+}
+
+/* ************************************************** */
+/* History Page */
+/* ************************************************** */
+/* Container for no history message */
+/* Center align the container content */
+.no-history-container {
+    background-color: #45505b;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 30px auto;
+    text-align: center; /* Center-aligns text and inline elements */
+    max-width: 600px; /* Restrict the width for better readability */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Title with username */
+.intro-text {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+/* Additional message */
+.no-history-message {
+    font-size: 1.2em;
+    color: #ffffff;
+    margin-bottom: 20px;
+}
+

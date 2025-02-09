@@ -1,8 +1,7 @@
-from application import app
-from application import db
+from application import app, db
 from flask import render_template, request, flash, redirect, url_for, session, jsonify
 from application.forms import LoginForm, SignupForm
-from application.models import Login
+from application.models import Login, ImagePrediction
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from PIL import Image
@@ -13,8 +12,13 @@ import requests
 import os
 from flask import send_from_directory
 import random
+import uuid  # For generating unique IDs
+from datetime import datetime
+from io import BytesIO
+import os
+from application.backblaze_helper import BackblazeHelper  # Import the Backblaze helper
 
-# Server URL (if not on host computer)
+# # Server URL (if not on host computer)
 # url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
 
 # If you are on your local computer
@@ -147,17 +151,39 @@ def logout():
 @login_required
 def predict():
     img_filename = None  # Variable to store the generated image filename
-    class_label = None # Variable to store the user's input
+    class_label = None  # Variable to store the user's input
 
     if request.method == 'POST':
         # Retrieve the class label input from the form
         class_label = request.form.get('class_label').lower()
 
         if class_label and len(class_label) == 1 and class_label.isalpha():
-            img_filename = generate_image_from_class(class_label)
+            # Generate the image using the provided class label
+            buffer, img_filename = generate_image_from_class(class_label, current_user.id)
+
+            if img_filename:
+                # Save the temporary image to the gen_images folder
+                temp_path = os.path.join(IMAGE_DIR, img_filename)
+                with open(temp_path, 'wb') as f:
+                    f.write(buffer.getvalue())  # Write the BytesIO buffer to the file
+
+                # Return the image URL and success status
+                return jsonify({
+                    'success': True,
+                    'class_label': class_label,  # Send the class label back to the client
+                    'image_url': url_for('serve_gen_images', filename=img_filename),
+                    'random_generate_button': False,  # Indicate this was not a random generation
+                    'temp_filename': img_filename  # Pass the temporary filename to the frontend
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to generate image.',
+                })
         else:
             flash('Please enter a valid class label (single letter A-Z)', 'danger')
 
+    # If it's a GET request or validation fails, render the template
     return render_template('predict.html', img_filename=img_filename, class_label=class_label)
 
 # Handle http://127.0.0.1:5000/predict_random
@@ -165,86 +191,147 @@ def predict():
 def predict_random():
     # Generate a random letter (a-z)
     class_label = random.choice('abcdefghijklmnopqrstuvwxyz')
-
-    # Generate the image using the random letter
-    img_filename = generate_image_from_class(class_label)
-
+    # Generate the image using the random letter and current user's ID
+    buffer, img_filename = generate_image_from_class(class_label, current_user.id)  # Unpack the tuple
     if img_filename:
+        # Save the temporary image to the gen_images folder
+        temp_path = os.path.join(IMAGE_DIR, img_filename)
+        with open(temp_path, 'wb') as f:
+            f.write(buffer.getvalue())  # Write the BytesIO buffer to the file
+        
+        # Flash a success message
+        flash('Random image generated successfully!', 'success')
+
         # Return the image URL and success status
         return jsonify({
             'success': True,
             'class_label': class_label,  # Send the random letter back to the client
             'image_url': url_for('serve_gen_images', filename=img_filename),
-            'random_generate_button': True  # Indicate that this was a random generation
+            'random_generate_button': True,  # Indicate that this was a random generation
+            'temp_filename': img_filename  # Pass the temporary filename to the frontend
         })
     else:
+        flash('Failed to generate image.', 'danger')
         return jsonify({
             'success': False,
             'error': 'Failed to generate image.',
         })
-    
-def generate_image_from_class(class_label):
+
+def generate_image_from_class(class_label, user_id):
     try:
         # Convert class label (e.g., "S") to an integer index (A=0, ..., Z=25)
         class_index = ord(class_label.lower()) - ord('a')
-
         # Generate a 100-dimensional latent vector with random floats
         latent_vector = np.random.rand(100).astype(np.float32)  # Shape should be (1, 100)
-
         # Construct the one-hot encoded vector for the class
         one_hot_encoded_class = np.array([1.0 if i == class_index else 0.0 for i in range(26)], dtype=np.float32)  # Shape should be (1, 26)
-
         # Prepare the payload as a dictionary (numpy arrays should be converted to lists)
         instances = [{
             "input_3": one_hot_encoded_class.astype(np.float32).tolist(),
             "input_2": latent_vector.astype(np.float32).tolist()
         }]
-
         # Serialize the payload into JSON format
         data = json.dumps({"signature_name": "serving_default", "instances": instances})
-
         # Send the request to the GAN model
         headers = {"Content-Type": "application/json"}
         json_response = requests.post(url_gen, data=data, headers=headers)
-
         # Check for a successful response
         if json_response.status_code == 200:
             # Parse the JSON response to get the predictions (image data)
             predictions = json.loads(json_response.text)['predictions']
-
             # Assuming the predictions contain the image data as a 4D array: [batch_size, height, width, channels]
             image_array = np.array(predictions[0])  # Get the first image in the batch
-
             # Ensure the image is 28x28 with a single channel (grayscale)
             image_array = image_array.squeeze(axis=-1)  # Remove the last channel dimension (1) if it exists
-
             # Ensure the pixel values are in the range [0, 255] and cast to uint8
             image_array = np.clip(image_array * 255, 0, 255).astype(np.uint8)
-
             # Create a PIL Image from the numpy array
             img = Image.fromarray(image_array)
-
-            # Resize the image to 600x600 pixels
+            # Resize the image to 300x300 pixels
             img = img.resize((300, 300), Image.Resampling.LANCZOS)  # Use high-quality resampling
-
-            # Save the image to the gen_images directory
-            image_filename = f"generated_image_{class_label}.png"
-            image_path = os.path.join(IMAGE_DIR, image_filename)
-            img.save(image_path)
-
-            # Return the filename of the saved image
-            return image_filename
+            # Generate a unique identifier
+            unique_id = str(uuid.uuid4())[:8]  # First 8 characters of a UUID
+            # Get the current timestamp
+            timestamp = datetime.now().strftime("%Y%m%d%H%M")  # Format: YYYYMMDDHHMMSS
+            # Construct the filename with user_id, class_label, timestamp, and unique_id
+            image_filename = f"user_{user_id}_label_{class_label}_ts_{timestamp}_id_{unique_id}.png"
+            # Save the image to an in-memory buffer
+            buffer = BytesIO()
+            img.save(buffer, format="PNG")
+            buffer.seek(0)  # Rewind the buffer to the beginning
+            # Return the buffer and the filename
+            return buffer, image_filename
         else:
             print(f"Error with GAN model API response: {json_response.status_code}, {json_response.content}")
-            return None
+            return None, None
     except Exception as e:
         print(f"Error generating image: {e}")
-        return None
-    
+        return None, None
+
+@app.route('/save_image', methods=['POST'])
+@login_required
+def save_image():
+    try:
+        # Parse the JSON payload
+        data = request.get_json()
+        temp_filename = data.get('temp_filename')  
+        class_label = data.get('class_label')
+
+        if not temp_filename or not class_label:
+            return jsonify({'success': False, 'error': 'Missing temporary filename or class label.'}), 400
+
+        # Load the temporary image from the gen_images folder
+        temp_path = os.path.join(IMAGE_DIR, temp_filename)
+        if not os.path.exists(temp_path):
+            return jsonify({'success': False, 'error': 'Temporary image file not found.'}), 400
+
+        # Open the image and save it to an in-memory buffer
+        with open(temp_path, 'rb') as f:
+            buffer = BytesIO(f.read())
+
+        # Generate a unique identifier and timestamp
+        unique_id = str(uuid.uuid4())[:8]  
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")  
+        image_filename = f"user_{current_user.id}_label_{class_label}_ts_{timestamp}_id_{unique_id}.png"
+
+        # Upload the image to Backblaze B2
+        uploaded_filename = BackblazeHelper().upload_file(buffer, image_filename)
+
+        # Save the image metadata to the database
+        new_prediction = ImagePrediction(
+            user_id=current_user.id,
+            image_filename=uploaded_filename,
+            class_label=class_label
+        )
+        db.session.add(new_prediction)
+        db.session.commit()
+
+        # Delete the temporary image file after saving
+        os.remove(temp_path)
+
+        # Return JSON response with success and redirection URL
+        return jsonify({'success': True, 'redirect_url': url_for('history')})
+
+    except Exception as e:
+        print(f"Error saving image: {e}")
+        return jsonify({'success': False, 'error': 'An error occurred while saving the image.'}), 500
+
 # Handle http://127.0.0.1:5000/history
-@app.route('/history', methods=['GET', 'POST'])
+@app.route('/history', methods=['GET'])
+@login_required
 def history():
-    return render_template('history.html')
+    page = request.args.get('page', 1, type=int)
+    per_page = 5  # Number of predictions per page
+    
+    # Fetch predictions with pagination
+    predictions = ImagePrediction.query.filter_by(user_id=current_user.id).paginate(page=page, per_page=per_page)
+    
+    # Generate signed URLs for each image
+    backblaze_helper = BackblazeHelper()
+    for prediction in predictions.items:
+        prediction.image_url = backblaze_helper.generate_signed_url(prediction.image_filename)
+    
+    return render_template('history.html', predictions=predictions)
 
 if __name__ == "__main__":
     app.run(debug=True)  # This will run the Flask app

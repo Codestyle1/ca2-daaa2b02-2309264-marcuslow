@@ -1,13 +1,16 @@
 from flask import Flask
-from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 # instantiate SQLAlchemy to handle db process
 db = SQLAlchemy()
 
 #create the Flask app
 app = Flask(__name__)
-CORS(app)
 
 # load configuration from config.cfg
 app.config.from_pyfile('config.cfg')

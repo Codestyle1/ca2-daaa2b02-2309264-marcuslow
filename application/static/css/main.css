@@ -72,31 +72,40 @@ header {
     box-shadow: 0 4px 8px rgba(255, 255, 255, 0.5); /* softer white shadow */
 }
 
-
-/* Modal for BMI Calculation */
-.modal-content {
-    color: black
+/* Custom Modal Styles */
+.custom-modal-content {
+    background-color: #212529; /* Dark background for the modal */
+    border: none; /* Remove default border */
+    border-radius: 10px; /* Rounded corners */
 }
 
-.modal-content h3{
-    text-align: center;
+.custom-modal-title {
+    color: #ffffff; /* White text for the modal title */
 }
 
-#calculateBmiBtn {
-    background-color: #3498db; 
-    color: white; 
-    border: none; 
-    border-radius: 6px; 
-    padding: 10px 20px; 
-    font-size: 16px; 
-    cursor: pointer; 
-    transition: background-color 0.3s ease; 
+.modal-body {
+    color: #d4d4d4; /* Light gray text for the modal body */
 }
 
-#calculateBmiBtn:hover {
-    background-color: #2980b9; /* Darker shade on hover */
+/* Cancel Button (Red by Default) */
+.modal-footer .custom-btn-cancel {
+    background-color: #dc3545; /* Red background */
+    color: #ffffff; /* White text */
 }
 
+.custom-btn-cancel:hover {
+    background-color: #bb2d3b; /* Darker red on hover */
+}
+
+/* Save Button (Green by Default) */
+.modal-footer .custom-btn-save {
+    background-color: #28a745; /* Green background */
+    color: #ffffff; /* White text */
+}
+
+.custom-btn-save:hover {
+    background-color: #1e7e34 !important; /* Darker green on hover */
+}
 
 /* ************************************************** */
 /* History Page */
@@ -119,6 +128,8 @@ header {
     background-color: #a88686;
 }
 
-
+.table {
+    color: white;
+}
 
 
