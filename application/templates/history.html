@@ -1,87 +1,106 @@
 {% extends 'layout.html' %}
 <!-- Dark background img -->
 {% set background_image = 'images/dark_bg.jpg' %}
-
 {% block content %}
-    <h2>Image Generation History</h2>
-    <!-- If no predictions, display a message and link to create a new prediction -->
-    {% if not predictions.items %}
-        <!-- Add a dynamic greeting message with the username -->
-        <div class="no-history-container">
-            <p class="intro-text">Hello, {{ username }}!</p>
-            <p class="no-history-message">It looks like you have no history yet.</p>
-            <p><a href="{{ url_for('predict') }}" class="create-prediction-link">Create a new prediction?</a></p>
+    <!-- Sidebar for Prediction Stats Summary -->
+    <div class="sidebar" id="stats-sidebar">
+        <div class="content">       
+            <h3>Prediction Stats Summary</h3>
+            <p>Total Predictions: {{ predictions.total }}</p>
+            <p>Average Prediction Time: {{ average_prediction_time }}</p>
+            <form id="stats-filter-form">
+                <label for="date-range">Date Range:</label>
+                <input type="date" id="start-date" name="start-date">
+                <input type="date" id="end-date" name="end-date">
+                <button type="submit">Filter</button>
+            </form>
         </div>
-    {% else %}
-        <p class="intro-text">Hello, {{ username }}! Below is your personal Image Generation history:</p>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Image</th>
-                    <th scope="col">Predicted On</th>
-                    <th scope="col">Class Label</th>
-                    <th scope="col">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for prediction in predictions %}
+    </div>  
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <h2>Image Generation History</h2>
+        <!-- If no predictions, display a message and link to create a new prediction -->
+        {% if not predictions.items %}
+            <!-- Add a dynamic greeting message with the username -->   
+            <div class="no-history-container">
+                <p class="intro-text">Hello, {{ username }}!</p>
+                <p class="no-history-message">It looks like you have no history yet.</p>
+                <p><a href="{{ url_for('predict') }}" class="create-prediction-link">Create a new prediction?</a></p>
+            </div>
+        {% else %}
+            <p class="intro-text">Hello, {{ username }}! Below is your personal Image Generation history:</p>
+            <table class="table">
+                <thead>
                     <tr>
-                        <td>
-                            <!-- Display the image -->
-                            <img src="{{ prediction.image_url }}" alt="Generated Image" style="max-width: 100px;">
-                        </td>
-                        <td>{{ prediction.predicted_on }}</td>
-                        <td>{{ prediction.class_label }}</td>
-                        <td>
-                            <!-- Add any actions you want here, e.g., delete, edit, etc. -->
-                            <a href="#" class="btn btn-sm btn-danger">Delete</a>
-                        </td>
+                        <th scope="col">#</th>
+                        <th scope="col">Image</th>
+                        <th scope="col">Predicted On</th>
+                        <th scope="col">Class Label</th>
+                        <th scope="col">Actions</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
-        <!-- Pagination Links -->
-        <nav aria-label="Page navigation">
-            <ul class="pagination">
-                {% if predictions.has_prev %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('history', page=predictions.prev_num) }}">Previous</a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">Previous</span>
-                    </li>
-                {% endif %}
-                
-                {% for page_num in predictions.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-                    {% if page_num %}
-                        {% if page_num == predictions.page %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ page_num }}</span>
-                            </li>
-                        {% else %}
-                            <li class="page-item">
-                                <a class="page-link" href="{{ url_for('history', page=page_num) }}">{{ page_num }}</a>
-                            </li>
-                        {% endif %}
+                </thead>
+                <tbody>
+                    {% for prediction in predictions %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                <!-- Display the image -->
+                                <img src="{{ prediction.image_url }}" alt="Generated Image" style="max-width: 100px;">
+                            </td>
+                            <td>{{ prediction.predicted_on }}</td>
+                            <td>{{ prediction.class_label }}</td>
+                            <td>
+                                <!-- Add any actions you want here, e.g., delete, edit, etc. -->
+                                <a href="#" class="btn-sm btn-danger">Delete</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <!-- Pagination Links -->
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    {% if predictions.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('history', page=predictions.prev_num) }}">Previous</a>
+                        </li>
                     {% else %}
                         <li class="page-item disabled">
-                            <span class="page-link">...</span>
+                            <span class="page-link">Previous</span>
                         </li>
                     {% endif %}
-                {% endfor %}
-                
-                {% if predictions.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('history', page=predictions.next_num) }}">Next</a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">Next</span>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-    {% endif %}
+                    
+                    {% for page_num in predictions.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == predictions.page %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('history', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if predictions.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('history', page=predictions.next_num) }}">Next</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Next</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
 {% endblock %}

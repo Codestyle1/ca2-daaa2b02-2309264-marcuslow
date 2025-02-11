@@ -18,11 +18,8 @@ from io import BytesIO
 import os
 from application.backblaze_helper import BackblazeHelper  # Import the Backblaze helper
 
-# # Server URL (if not on host computer)
-# url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
-
-# If you are on your local computer
-url_gen = 'http://localhost:8501/v1/models/generator:predict'
+# Server URL
+url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
 
 # Path to the gen_images folder
 IMAGE_DIR = os.path.join(os.path.dirname(__file__), 'gen_images')
@@ -321,7 +318,7 @@ def save_image():
 @login_required
 def history():
     page = request.args.get('page', 1, type=int)
-    per_page = 5  # Number of predictions per page
+    per_page = 4 # Number of predictions per page
     
     # Fetch predictions with pagination
     predictions = ImagePrediction.query.filter_by(user_id=current_user.id).paginate(page=page, per_page=per_page)

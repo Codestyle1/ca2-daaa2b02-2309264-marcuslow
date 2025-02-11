@@ -540,11 +540,32 @@ form legend {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
 }
 
+.loading-content {
+    text-align: center;
+}
+
 /* ************************************************** */
 /* History Page */
 /* ************************************************** */
 /* Container for no history message */
 /* Center align the container content */
+.pagination {
+    display: flex;
+    justify-content: center; /* Centers pagination */
+    align-items: center;
+    margin-top: 20px; /* Adds space above the pagination */
+    padding: 10px;
+}
+
+.pagination .page-item {
+    margin: 0 5px; /* Adds spacing between pagination items */
+}
+
+.pagination .page-link {
+    border-radius: 5px;
+    padding: 8px 12px;
+}
+
 .no-history-container {
     background-color: #45505b;
     border-radius: 8px;
@@ -568,5 +589,32 @@ form legend {
     font-size: 1.2em;
     color: #ffffff;
     margin-bottom: 20px;
+}   
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 130px;
+    left: -400px; /* Initially hidden */
+    width: 440px;
+    height: calc(100% - 60px);
+    background-color: #453e3e;
+    padding: 20px;
+    transition: left 0.3s ease-in-out;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    cursor: pointer; /* Indicate it's clickable */
 }
 
+/* Sidebar toggle button */
+.sidebar-toggle {
+    position: fixed;
+    top: 50%;
+    left: 10px;
+    background: #007bff;
+    color: white;
+    padding: 10px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    transition: left 0.3s ease-in-out, transform 0.3s ease-in-out;
+}

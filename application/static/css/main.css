@@ -107,6 +107,7 @@ header {
     background-color: #1e7e34 !important; /* Darker green on hover */
 }
 
+
 /* ************************************************** */
 /* History Page */
 /* ************************************************** */
@@ -120,16 +121,24 @@ header {
     background-color: rgb(168, 224, 124); /* Green for Create */
 }
 
-.pagination {
-    background-color: #2980b9;
-}
-
-.pagination:hover {
-    background-color: #a88686;
-}
-
 .table {
     color: white;
 }
 
+.pagination .page-link {
+    background-color: #f8f9fa;
+    color: #333;
+    border: 1px solid #ddd;
+    transition: background-color 0.3s ease;
+}
 
+.pagination .page-item.active .page-link {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.pagination .page-link:hover {
+    background-color: #e9ecef;
+    color: #333;
+}
