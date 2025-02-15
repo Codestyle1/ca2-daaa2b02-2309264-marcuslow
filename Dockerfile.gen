@@ -14,7 +14,7 @@ EXPOSE 8501
 COPY ./CA2_Part_A/saved_GAN_models/generator /models/generator
 COPY ./CA2_Part_A/generator /models/dcgan_generator
 
-# Optionally, create a model config file for TensorFlow Serving to load both models
+# Create a model config file for TensorFlow Serving to load both models
 RUN echo "model_config_list: {\n  config: [\n    {name: 'generator', base_path: '/models/generator', model_platform: 'tensorflow'},\n    {name: 'dcgan_generator', base_path: '/models/dcgan_generator', model_platform: 'tensorflow'}\n  ]\n}" > /models/models.config
 
 # Start the TensorFlow Serving server with the model config file
