@@ -11,6 +11,8 @@
 
     <!-- css link (main.css) -->
     <link rel="stylesheet" href="{{ url_for('static',filename='css/main.css')}}" />
+    <!-- css link (index.css) -->
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/index.css')}}" />
     <!-- css link (style.css) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
     <!-- css link (animations.css) -->
@@ -32,11 +34,6 @@
 
 </head>
 <body>
-    <!-- Embedded GIF -->
-    <!-- <div class="container-fluid text-center top-container">
-        <img src= "{{ url_for('static',filename='videos/Smoking.gif')}}">
-        Source: https://www.pinterest.com/pin/792563234405036237/
-    </div> -->
     <!-- Full-page background video (outside the section) -->
     <div class="background-media">
         {% if background_video %}
@@ -59,8 +56,8 @@
             </a>            
             
             <ul class="navlist">
-                <li><a href="/home">Home</a></li>
-                <li><a href="{{ url_for('predict') }}" class=".btn-predict">Predict</a></li>
+                <li><a href="/home">Home</a></li>   
+                <li><a href="{{ url_for('predict') }}" class=".btn-predict">Generate</a></li>
 
                 <!-- Profile Picture Only Visible if User is Logged In -->
                 {% if user_logged_in %}

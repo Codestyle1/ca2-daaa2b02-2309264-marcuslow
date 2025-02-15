@@ -115,3 +115,67 @@ document.getElementById('confirm-save-btn').addEventListener('click', function (
             // Loading overlay will remain visible until the redirect happens, no need to hide it here.
         });
 });
+
+// Toggle Card When Clicking Inside #wrapper_predict
+document.addEventListener("DOMContentLoaded", function () {
+    const card = document.querySelector(".thecard");
+    const wrappers = document.querySelectorAll('[id="wrapper_predict"]'); // Select both wrappers
+
+    // Add click event to both elements
+    wrappers.forEach(wrapper => {
+        wrapper.addEventListener("click", function (event) {
+            // Prevent flipping when clicking buttons or form elements
+            if (event.target.tagName === "BUTTON" || event.target.tagName === "INPUT") {
+                return;
+            }
+            card.classList.toggle("flipped");
+        });
+    });
+});
+
+// To Generate combined image gracefully
+document.getElementById('generateCombinedForm').addEventListener('submit', function (event) {
+    event.preventDefault(); // Prevent default form submission
+
+    let classLabels = document.getElementById('class_label_combined').value.trim().toUpperCase();
+    
+    // Remove spaces temporarily to count only letters
+    let letterCount = classLabels.replace(/ /g, "").length;
+
+    // Ensure only letters (A-Z) and spaces are used, and letters do not exceed 50
+    if (!classLabels.match(/^[A-Z ]+$/) || letterCount > 50) {
+        console.error('Please enter up to 50 letters (A-Z). Spaces are allowed and does not count toward the limit.');
+        return;
+    }
+
+    // Make an AJAX request to the server to generate the combined image
+    fetch('/predict_words', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `class_label_combined=${encodeURIComponent(classLabels)}` // Proper encoding
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the input message with the entered class labels
+                document.getElementById('combined-input-message').innerHTML = `
+                    Combined Input: ${data.class_label}
+                `;
+                
+                // Update the combined generated image
+                document.getElementById('combined-generated-image').src = data.image_url;
+                
+                // Show the "Save Combined Image" button
+                document.getElementById('save-combined-image-btn').classList.remove('hidden');
+            } else {
+                console.error('Failed to generate combined image.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+});
+
+

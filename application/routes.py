@@ -17,6 +17,7 @@ from datetime import datetime
 from io import BytesIO
 import os
 from application.backblaze_helper import BackblazeHelper  # Import the Backblaze helper
+import re
 
 # Server URL
 url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
@@ -183,6 +184,77 @@ def predict():
     # If it's a GET request or validation fails, render the template
     return render_template('predict.html', img_filename=img_filename, class_label=class_label)
 
+# Helper function to validate the input
+def validate_input(class_label):
+    return bool(re.match(r'^[A-Z ]{1,50}$', class_label))
+
+@app.route('/predict_words', methods=['POST'])
+def predict_words():
+    class_labels = request.form.get('class_label_combined').upper().strip()
+
+    if not validate_input(class_labels):
+        return jsonify({"success": False, "message": "Invalid input. Enter only A-Z and spaces, up to 50 characters."})
+
+    images = []
+    temp_filenames = []
+
+    # Split input into 10-character chunks, including spaces
+    words = [class_labels[i:i+10] for i in range(0, len(class_labels), 10)]
+
+    for word in words:
+        word_images = []
+        for letter in word:
+            if letter == " ":
+                # Use a placeholder letter to get the correct dimensions
+                sample_letter = "A"  # Assuming all letters have the same size
+                buffer, _ = generate_image_from_class(sample_letter, current_user.id)
+                if buffer:
+                    sample_img = Image.open(buffer)
+                    img = Image.new("RGB", sample_img.size, color=sample_img.getpixel((0, 0)))  # Match background color
+                else:
+                    img = Image.new("RGB", (30, 30), color="white")  # Fallback default
+                word_images.append(img)
+            else:
+                buffer, img_filename = generate_image_from_class(letter, current_user.id)
+                if buffer:
+                    img = Image.open(buffer)
+                    word_images.append(img)
+                    temp_filenames.append(img_filename)
+
+        # Combine letters horizontally for each 10-character word
+        if word_images:
+            combined_word_img = Image.new('RGB', (sum(img.width for img in word_images), word_images[0].height))
+            x_offset = 0
+            for img in word_images:
+                combined_word_img.paste(img, (x_offset, 0))
+                x_offset += img.width
+            images.append(combined_word_img)
+
+    # Combine rows vertically
+    if images:
+        total_height = sum(img.height for img in images)
+        max_width = max(img.width for img in images)
+        final_image = Image.new('RGB', (max_width, total_height))
+
+        y_offset = 0
+        for img in images:
+            final_image.paste(img, (0, y_offset))
+            y_offset += img.height
+
+        final_filename = f"user_{current_user.id}_combined_{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
+        final_path = os.path.join(IMAGE_DIR, final_filename)
+        final_image.save(final_path)
+
+        return jsonify({
+            "success": True,
+            "class_label": class_labels,
+            "image_url": f"/gen_images/{final_filename}",
+            "combined_img_filename": final_filename,
+            "temp_filenames": temp_filenames
+        })
+
+    return jsonify({"success": False, "message": "Could not generate image. Please try again."})
+
 # Handle http://127.0.0.1:5000/predict_random
 @app.route('/predict_random', methods=['POST'])
 def predict_random():
@@ -196,9 +268,6 @@ def predict_random():
         with open(temp_path, 'wb') as f:
             f.write(buffer.getvalue())  # Write the BytesIO buffer to the file
         
-        # Flash a success message
-        flash('Random image generated successfully!', 'success')
-
         # Return the image URL and success status
         return jsonify({
             'success': True,

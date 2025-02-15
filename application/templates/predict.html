@@ -5,47 +5,85 @@
 {% block healthTextHome %}
 
 <!-- Flash Messages Section -->
-<h1>Generate Image</h1>
-<div class="wrapper" id="wrapper_predict">
-    <div class="row">
-        <!-- Column for the form -->
-        <div class="col-6">
-            <form method="POST" action="{{ url_for('predict') }}" id="generateForm">
-                <div class="form-group">
-                    <label for="class_label">Enter Class Label (A-Z):</label>
-                    <input type="text" id="class_label" name="class_label" maxlength="1" class="form-control" required>
+<h1>Generate Handwritten Images</h1>
+<div class="maincontainer">
+    <div class="thecard">
+        <div class="thefront">
+            <div class="wrapper custom-wrapper" id="wrapper_predict">
+                <div class="row">
+                    <!-- Column for the form -->
+                    <div class="col-6">
+                        <form method="POST" action="{{ url_for('predict') }}" id="generateForm">
+                            <div class="form-group">
+                                <label for="class_label">Enter Class Label (A-Z):</label>
+                                <input type="text" id="class_label" name="class_label" maxlength="1" class="form-control" required>
+                            </div>
+                            <div class="form-group mb-5">
+                                <button type="submit" class="btn-generate">Generate</button>
+                            </div>
+                        </form>
+                        <!-- Random Alphabet Button -->
+                        <div class="form-group">
+                            <label for="class_label_random">Generate Random Alphabets:</label>
+                            <button type="button" id="random-alphabet-btn" class="btn-generate">Click Here!</button>
+                        </div>
+                    </div>
+                    <!-- Column for the generated image and text -->
+                    <div class="col-6">
+                        <p id="input-message">
+                            {% if img_filename %}
+                                {% if random_generate_button %}
+                                    Randomly Generated Input: '{{ class_label }}'
+                                {% else %}
+                                    Your Input: '{{ class_label }}'
+                                {% endif %}
+                            {% endif %}
+                        </p>
+                        <img id="generated-image" src="
+                            {% if img_filename %}
+                                {{ url_for('serve_gen_images', filename=img_filename) }}
+                            {% else %}
+                                {{ url_for('static', filename='images/empty_img_placeholder.png') }}
+                            {% endif %}
+                        " alt="Generated Image" class="img-fluid" />
+                        <!-- Buttons directly under the image -->
+                        <div class="d-flex justify-content-center mt-3">
+                            <button type="button" id="save-image-btn" class="btn_predict me-2 {% if not img_filename %}hidden{% endif %}" data-bs-toggle="modal" data-bs-target="#saveImageModal">Save Image</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group mb-5">
-                    <button type="submit" class="btn-generate">Generate</button>
-                </div>
-            </form>
-            <!-- Random Alphabet Button -->
-            <div class="form-group">
-                <label for="class_label_random">Generate Random Alphabets:</label>
-                <button type="button" id="random-alphabet-btn" class="btn-generate">Click Here!</button>
             </div>
         </div>
-        <!-- Column for the generated image and text -->
-        <div class="col-6">
-            <p id="input-message">
-                {% if img_filename %}
-                    {% if random_generate_button %}
-                        Randomly Generated Input: '{{ class_label }}'
-                    {% else %}
-                        Your Input: '{{ class_label }}'
-                    {% endif %}
-                {% endif %}
-            </p>
-            <img id="generated-image" src="
-                {% if img_filename %}
-                    {{ url_for('serve_gen_images', filename=img_filename) }}
-                {% else %}
-                    {{ url_for('static', filename='images/empty_img_placeholder.png') }}
-                {% endif %}
-            " alt="Generated Image" class="img-fluid" />
-            <!-- Buttons directly under the image -->
-            <div class="d-flex justify-content-center mt-3">
-                <button type="button" id="save-image-btn" class="btn_predict me-2 {% if not img_filename %}hidden{% endif %}" data-bs-toggle="modal" data-bs-target="#saveImageModal">Save Image</button>
+        <div class="theback">
+            <div class="wrapper custom-wrapper" id="wrapper_predict">
+                <div class="row">
+                    <!-- Column for the form -->
+                    <div class="col-6">
+                        <form method="POST" id="generateCombinedForm">
+                            <div class="form-group">
+                                <label for="class_label_combined">Enter Letters (A-Z and spaces, max 50):</label>
+                                <input type="text" id="class_label_combined" name="class_label_combined" maxlength="50" class="form-control" required>
+                            </div>
+                            <div class="form-group mb-5">
+                                <button type="submit" class="btn-generate">Generate Combined</button>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- Column for the generated image and text -->
+                    <div class="col-6">
+                        <p id="combined-input-message">
+                            {% if combined_img_filename %}
+                                <span>Combined Input: {{ class_label_combined }}</span>
+                                <img src="{{ url_for('serve_gen_images', filename=combined_img_filename) }}" alt="Generated Combined Image" class="img-fluid mb-2"/>
+                            {% endif %}
+                        </p>
+                        <img id="combined-generated-image" src="{{ url_for('static', filename='images/empty_img_placeholder.png') }}" alt="Generated Combined Image" class="img-fluid" />
+                        <!-- Buttons directly under the image -->
+                        <div class="d-flex justify-content-center mt-3">
+                            <button type="button" id="save-combined-image-btn" class="btn_predict me-2 {% if not combined_img_filename %}hidden{% endif %}" data-bs-toggle="modal" data-bs-target="#saveImageModal">Save Combined Image</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
