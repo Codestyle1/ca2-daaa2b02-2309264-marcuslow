@@ -19,8 +19,8 @@ import os
 from application.backblaze_helper import BackblazeHelper  # Import the Backblaze helper
 import re
 
-# Server URL
-url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
+# # Server URL
+# url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
 
 # Path to the gen_images folder
 IMAGE_DIR = os.path.join(os.path.dirname(__file__), 'gen_images')
@@ -157,7 +157,7 @@ def predict():
 
         if class_label and len(class_label) == 1 and class_label.isalpha():
             # Generate the image using the provided class label
-            buffer, img_filename = generate_image_from_class(class_label, current_user.id)
+            buffer, img_filename = generate_image_from_class(class_label, current_user.id, model_name="cgan")
 
             if img_filename:
                 # Save the temporary image to the gen_images folder
@@ -188,11 +188,14 @@ def predict():
 def validate_input(class_label):
     return bool(re.match(r'^[A-Z ]{1,50}$', class_label))
 
+# Handle /predict_words
 @app.route('/predict_words', methods=['POST'])
 def predict_words():
     class_labels = request.form.get('class_label_combined').upper().strip()
 
+    # Validation: Only allow letters A-Z and spaces, up to 50 characters
     if not validate_input(class_labels):
+        flash('Please enter up to 50 letters (A-Z), spaces are allowed but they do not count toward the limit.', 'danger')
         return jsonify({"success": False, "message": "Invalid input. Enter only A-Z and spaces, up to 50 characters."})
 
     images = []
@@ -205,9 +208,9 @@ def predict_words():
         word_images = []
         for letter in word:
             if letter == " ":
-                # Use a placeholder letter to get the correct dimensions
-                sample_letter = "A"  # Assuming all letters have the same size
-                buffer, _ = generate_image_from_class(sample_letter, current_user.id)
+                # Handle space as a placeholder
+                sample_letter = "A"  # Using "A" as a placeholder for spacing
+                buffer, _ = generate_image_from_class(sample_letter, current_user.id, model_name="cgan")
                 if buffer:
                     sample_img = Image.open(buffer)
                     img = Image.new("RGB", sample_img.size, color=sample_img.getpixel((0, 0)))  # Match background color
@@ -215,13 +218,13 @@ def predict_words():
                     img = Image.new("RGB", (30, 30), color="white")  # Fallback default
                 word_images.append(img)
             else:
-                buffer, img_filename = generate_image_from_class(letter, current_user.id)
+                buffer, img_filename = generate_image_from_class(letter, current_user.id, model_name="cgan")
                 if buffer:
                     img = Image.open(buffer)
                     word_images.append(img)
                     temp_filenames.append(img_filename)
 
-        # Combine letters horizontally for each 10-character word
+        # Combine letters horizontally for each word
         if word_images:
             combined_word_img = Image.new('RGB', (sum(img.width for img in word_images), word_images[0].height))
             x_offset = 0
@@ -261,7 +264,7 @@ def predict_random():
     # Generate a random letter (a-z)
     class_label = random.choice('abcdefghijklmnopqrstuvwxyz')
     # Generate the image using the random letter and current user's ID
-    buffer, img_filename = generate_image_from_class(class_label, current_user.id)  # Unpack the tuple
+    buffer, img_filename = generate_image_from_class(class_label, current_user.id, model_name="cgan")  # Unpack the tuple
     if img_filename:
         # Save the temporary image to the gen_images folder
         temp_path = os.path.join(IMAGE_DIR, img_filename)
@@ -283,7 +286,7 @@ def predict_random():
             'error': 'Failed to generate image.',
         })
 
-def generate_image_from_class(class_label, user_id):
+def generate_image_from_class(class_label, user_id, model_name):
     try:
         # Convert class label (e.g., "S") to an integer index (A=0, ..., Z=25)
         class_index = ord(class_label.lower()) - ord('a')
@@ -298,9 +301,14 @@ def generate_image_from_class(class_label, user_id):
         }]
         # Serialize the payload into JSON format
         data = json.dumps({"signature_name": "serving_default", "instances": instances})
+
+        # # Server URL
+        url_gen = f'https://gan-gen-ca2.onrender.com/v1/models/{model_name}:predict'
+
         # Send the request to the GAN model
         headers = {"Content-Type": "application/json"}
         json_response = requests.post(url_gen, data=data, headers=headers)
+
         # Check for a successful response
         if json_response.status_code == 200:
             # Parse the JSON response to get the predictions (image data)

@@ -145,6 +145,7 @@ document.getElementById('generateCombinedForm').addEventListener('submit', funct
     // Ensure only letters (A-Z) and spaces are used, and letters do not exceed 50
     if (!classLabels.match(/^[A-Z ]+$/) || letterCount > 50) {
         console.error('Please enter up to 50 letters (A-Z). Spaces are allowed and does not count toward the limit.');
+        flashMessage('Please enter up to 50 letters (A-Z), spaces are allowed but they do not count toward the limit.', 'danger');
         return;
     }
 
@@ -170,12 +171,33 @@ document.getElementById('generateCombinedForm').addEventListener('submit', funct
                 // Show the "Save Combined Image" button
                 document.getElementById('save-combined-image-btn').classList.remove('hidden');
             } else {
-                console.error('Failed to generate combined image.');
+                flashMessage(data.message || 'Failed to generate combined image.', 'danger');
             }
         })
         .catch(error => {
             console.error('Error:', error);
+            flashMessage('An error occurred while generating the combined image.', 'danger');
         });
 });
 
+// Function to display flash message dynamically
+function flashMessage(message, category) {
+    // Get the flash message container and set the message
+    const flashContainer = document.getElementById('flash-message');
+    const flashAlert = flashContainer.querySelector('.alert'); // Get the alert div inside
 
+    if (flashAlert) {
+        flashAlert.className = `alert alert-${category}`;  // Set the appropriate class
+        flashAlert.querySelector('p').textContent = message;  // Set the message text
+    }
+
+    // Show the flash message
+    flashContainer.style.visibility = 'visible';
+    flashContainer.style.opacity = '1';
+
+    // Optionally, hide the flash message after a few seconds
+    setTimeout(() => {
+        flashContainer.style.visibility = 'hidden';
+        flashContainer.style.opacity = '0';
+    }, 3000);
+}
