@@ -473,13 +473,12 @@ def history():
     generations = ImagePrediction.query.filter_by(user_id=current_user.id).paginate(page=page, per_page=4)
     username = current_user.username
 
-    # Assuming 'min_date' and 'max_date' are datetime objects
-    min_date = ImagePrediction.query.filter_by(user_id=current_user.id).order_by(ImagePrediction.predicted_on).first().predicted_on
-    max_date = ImagePrediction.query.filter_by(user_id=current_user.id).order_by(ImagePrediction.predicted_on.desc()).first().predicted_on
+    # Check if there are any predictions before accessing predicted_on
+    first_prediction = ImagePrediction.query.filter_by(user_id=current_user.id).order_by(ImagePrediction.predicted_on).first()
+    last_prediction = ImagePrediction.query.filter_by(user_id=current_user.id).order_by(ImagePrediction.predicted_on.desc()).first()
 
-    # Convert to ISO format
-    min_date_iso = min_date.isoformat()  # Converts to 'YYYY-MM-DDTHH:MM:SS'
-    max_date_iso = max_date.isoformat()  # Converts to 'YYYY-MM-DDTHH:MM:SS'
+    min_date_iso = first_prediction.predicted_on.isoformat() if first_prediction else None
+    max_date_iso = last_prediction.predicted_on.isoformat() if last_prediction else None
 
     # Get the deleted count from the session, default to 0 if not set
     deleted_count = session.get('deleted_count', 0)
