@@ -23,7 +23,7 @@
                 <div class="row">
                     <!-- Column for the form -->
                     <div class="col-6">
-                        <form method="POST" action="{{ url_for('predict') }}" id="generateForm">
+                        <form method="POST" action="{{ url_for('routes.predict') }}" id="generateForm">
                             <div class="form-group">
                                 <label for="class_label">Enter Class Label (A-Z):</label>
                                 <input type="text" id="class_label" name="class_label" maxlength="1" class="form-control" required>
@@ -51,7 +51,7 @@
                         </p>
                         <img id="generated-image" src="
                             {% if img_filename %}
-                                {{ url_for('serve_gen_images', filename=img_filename) }}
+                                {{ url_for('routes.serve_gen_images', filename=img_filename) }}
                             {% else %}
                                 {{ url_for('static', filename='images/empty_img_placeholder.png') }}
                             {% endif %}
@@ -91,7 +91,7 @@
                         </p>
                         <img id="combined-generated-image" src="
                         {% if combined_img_filename %}
-                            {{ url_for('serve_gen_images', filename=combined_img_filename) }}
+                            {{ url_for('routes.serve_gen_images', filename=combined_img_filename) }}
                         {% else %}
                             {{ url_for('static', filename='images/empty_img_placeholder.png') }}
                         {% endif %}
@@ -136,8 +136,8 @@
 </div>
 
 <script>
-    const predictRandomUrl = "{{ url_for('predict_random') }}";
-    const predictUrl = "{{ url_for('predict') }}";
+    const predictRandomUrl = "{{ url_for('routes.predict_random') }}";
+    const predictUrl = "{{ url_for('routes.predict') }}";
     const lineAni = document.querySelector('.wrapper-bg')
 
     for (let i = 0; i < 35; i++){

@@ -30,7 +30,7 @@
             <div class="no-history-container">
                 <p class="intro-text">Hello, {{ username }}!</p>
                 <p class="no-history-message">It looks like you have no history yet.</p>
-                <p><a href="{{ url_for('predict') }}" class="create-prediction-link">Create a new prediction?</a></p>
+                <p><a href="{{ url_for('routes.predict') }}" class="create-prediction-link">Create a new prediction?</a></p>
             </div>
         {% else %}
             <p class="intro-text">Hello, {{ username }}! Below is your personal Image Generation history:</p>
@@ -70,7 +70,7 @@
                 <ul class="pagination">
                     {% if predictions.has_prev %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('history', page=predictions.prev_num) }}">Previous</a>
+                            <a class="page-link" href="{{ url_for('routes.history', page=predictions.prev_num) }}">Previous</a>
                         </li>
                     {% else %}
                         <li class="page-item disabled">
@@ -86,7 +86,7 @@
                                 </li>
                             {% else %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('history', page=page_num) }}">{{ page_num }}</a>
+                                    <a class="page-link" href="{{ url_for('routes.history', page=page_num) }}">{{ page_num }}</a>
                                 </li>
                             {% endif %}
                         {% else %}
@@ -98,7 +98,7 @@
                     
                     {% if predictions.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('history', page=predictions.next_num) }}">Next</a>
+                            <a class="page-link" href="{{ url_for('routes.history', page=predictions.next_num) }}">Next</a>
                         </li>
                     {% else %}
                         <li class="page-item disabled">

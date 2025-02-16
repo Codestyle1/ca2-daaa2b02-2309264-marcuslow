@@ -1,5 +1,5 @@
-from application import app, db
-from flask import render_template, request, flash, redirect, url_for, session, jsonify
+from application import db
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify
 from application.forms import LoginForm, SignupForm
 from application.models import Login, ImagePrediction
 from flask_login import LoginManager, login_required, login_user, current_user, logout_user
@@ -19,6 +19,9 @@ import os
 from application.backblaze_helper import BackblazeHelper  # Import the Backblaze helper
 import re
 
+# Create a Blueprint object
+routes_bp = Blueprint('routes', __name__)
+
 # # Server URL
 # url_gen = 'https://gan-gen-ca2.onrender.com/v1/models/generator:predict'
 
@@ -30,12 +33,12 @@ if not os.path.exists(IMAGE_DIR):
     os.makedirs(IMAGE_DIR)
 
 # Route to serve files from the gen_images folder
-@app.route('/gen_images/<filename>')
+@routes_bp.route('/gen_images/<filename>')
 def serve_gen_images(filename):
     return send_from_directory(IMAGE_DIR, filename)
 
 # runs every time render_template is called
-@app.context_processor
+@routes_bp.context_processor
 def inject_user_logged_in():
     # Get the user_logged_in value and username from the session
     user_logged_in = session.get('user_logged_in', False)
@@ -46,16 +49,16 @@ def inject_user_logged_in():
     }
 
 #Handles http://127.0.0.1:5000/
-@app.route('/')
-@app.route('/index')
-@app.route('/home')
+@routes_bp.route('/')
+@routes_bp.route('/index')
+@routes_bp.route('/home')
 def home():
     # Get the user_logged_in value from the session
     user_logged_in = session.get('user_logged_in', False)
     return render_template("index.html", user_logged_in=user_logged_in)  # Use a template for your main page
 
 # Login
-login_manager = LoginManager(app)
+login_manager = LoginManager(routes_bp)
 login_manager.login_view = 'login'  # Redirect to 'login' route if not logged in
 login_manager.login_message = "Please log in to access this page."
 
@@ -63,14 +66,14 @@ login_manager.login_message = "Please log in to access this page."
 @login_manager.unauthorized_handler
 def unauthorized():
     flash('You need to log in to access this page.', 'danger')  # Flash a message
-    return redirect(url_for('login'))  # Redirect to the login page
+    return redirect(url_for('routes.login'))  # Redirect to the login page
 
 @login_manager.user_loader
 def load_user(user_id):
     return Login.query.get(int(user_id))
 
 # Handle http://127.0.0.1:5000/login
-@app.route('/login', methods=['GET', 'POST'])
+@routes_bp.route('/login', methods=['GET', 'POST'])
 def login():
     login_form = LoginForm()
 
@@ -91,13 +94,13 @@ def login():
             session['user_logged_in'] = True  # Update session to indicate user is logged in
 
             flash('Login successful!', 'success')
-            return redirect(url_for('home'))
+            return redirect(url_for('routes.home'))
         else:
             flash('Invalid credentials. Please check your username, email, and password.', 'danger')
 
     return render_template('login.html', login_form=login_form)
 
-@app.route('/signup', methods=['GET', 'POST'])
+@routes_bp.route('/signup', methods=['GET', 'POST'])
 def signup():
     signup_form = SignupForm()
 
@@ -130,19 +133,19 @@ def signup():
             session['user_logged_in'] = True
 
             flash('Signup successful! You are now logged in.', 'success')
-            return redirect(url_for('home'))  # Redirect to the home page
+            return redirect(url_for('routes.home'))  # Redirect to the home page
 
     return render_template('signup.html', signup_form=signup_form)
 
 # Handle http://127.0.0.1:5000/logout
-@app.route('/logout')
+@routes_bp.route('/logout')
 def logout():
     logout_user()  # Use Flask-Login's logout_user function to clear the session
     session.pop('user_id', None)  # Explicitly clear user session data
     session.pop('username', None)  # Clear username if it's stored in session
     session.pop('user_logged_in', None)  # Clear the user_logged_in flag from session
     flash('You have been logged out.', 'info')
-    return redirect(url_for('home'))
+    return redirect(url_for('routes.home'))
 
 # Function to remove previous image
 def remove_previous_image():
@@ -173,7 +176,7 @@ def remove_previous_image():
         latest_image = image_files[-1]
 
 # Handle http://127.0.0.1:5000/predict
-@app.route("/predict", methods=['GET', 'POST'])
+@routes_bp.route("/predict", methods=['GET', 'POST'])
 @login_required
 def predict():
     img_filename = None  # Variable to store the generated image filename
@@ -199,7 +202,7 @@ def predict():
                 return jsonify({
                     'success': True,
                     'class_label': class_label,
-                    'image_url': url_for('serve_gen_images', filename=img_filename),
+                    'image_url': url_for('routes.serve_gen_images', filename=img_filename),
                     'random_generate_button': False,
                     'temp_filename': img_filename,
                     'selected_model': model_name  # Return the model used
@@ -212,11 +215,11 @@ def predict():
     return render_template('predict.html', img_filename=img_filename, class_label=class_label)
 
 # Handle http://127.0.0.1:5000/predict_random
-@app.route('/predict_random', methods=['POST'])
+@routes_bp.route('/predict_random', methods=['POST'])
 def predict_random():
     # Get the selected model from the request JSON
     data = request.get_json()  # Parse the incoming JSON data
-    model_name = data.get('model_name', 'dcgan')  # Default to 'cgan' if model_name is not provided
+    model_name = data.get('model_name', 'cgan')  # Default to 'cgan' if model_name is not provided
     print(model_name, "predict_random")
 
     # Remove previous image before generating a new one
@@ -237,7 +240,7 @@ def predict_random():
         return jsonify({
             'success': True,
             'class_label': class_label,  # Send the random letter back to the client
-            'image_url': url_for('serve_gen_images', filename=img_filename),
+            'image_url': url_for('routes.serve_gen_images', filename=img_filename),
             'random_generate_button': True,  # Indicate that this was a random generation
             'temp_filename': img_filename  # Pass the temporary filename to the frontend
         })
@@ -253,7 +256,7 @@ def validate_input(class_label):
     return bool(re.match(r'^[A-Za-z ]{1,50}$', class_label))
 
 # Handle http://127.0.0.1:5000/predict_words
-@app.route('/predict_words', methods=['POST'])
+@routes_bp.route('/predict_words', methods=['POST'])
 def predict_words():
     class_labels = request.form.get('class_label_combined', '').strip()
     model_name = request.form.get('model_name', 'cgan')  # Default to CGAN if not provided
@@ -313,7 +316,7 @@ def predict_words():
         return jsonify({
             "success": True,
             "class_label": class_labels,
-            "image_url": url_for('serve_gen_images', filename=unique_filename),
+            "image_url": url_for('routes.serve_gen_images', filename=unique_filename),
             "combined_img_filename": unique_filename,
             "temp_filenames": temp_filenames
         })
@@ -385,7 +388,7 @@ def generate_image_from_class(class_label, user_id, model_name):
         print(f"Error generating image: {e}")
         return None, None
 
-@app.route('/save_image', methods=['POST'])
+@routes_bp.route('/save_image', methods=['POST'])
 @login_required
 def save_image():
     try:
@@ -433,14 +436,14 @@ def save_image():
             os.remove(temp_path)
 
         # Return success response
-        return jsonify({'success': True, 'redirect_url': url_for('history')})
+        return jsonify({'success': True, 'redirect_url': url_for('routes.history')})
 
     except Exception as e:
         print(f"Error saving image: {e}")
         return jsonify({'success': False, 'error': 'An error occurred while saving the image.'}), 500
 
 # Handle http://127.0.0.1:5000/history
-@app.route('/history', methods=['GET'])
+@routes_bp.route('/history', methods=['GET'])
 @login_required
 def history():
     page = request.args.get('page', 1, type=int)
@@ -457,4 +460,4 @@ def history():
     return render_template('history.html', predictions=predictions)
 
 if __name__ == "__main__":
-    app.run(debug=True)  # This will run the Flask app
+    routes_bp.run(debug=True)  # This will run the Flask app

@@ -51,17 +51,17 @@
     <div class="container">
         <header>
             <!-- Default header content -->
-            <a href="{{ url_for('home') }}" class="logo">
+            <a href="{{ url_for('routes.home') }}" class="logo">
                 <img src="{{ url_for('static', filename='images/ai_logo.png') }}" alt="AI Logo">
             </a>            
             
             <ul class="navlist">
                 <li><a href="/home">Home</a></li>   
-                <li><a href="{{ url_for('predict') }}" class=".btn-predict">Generate</a></li>
+                <li><a href="{{ url_for('routes.predict') }}" class=".btn-predict">Generate</a></li>
 
                 <!-- Profile Picture Only Visible if User is Logged In -->
                 {% if user_logged_in %}
-                <li><a href="{{ url_for('history') }}" class=".btn-predict">History</a></li>
+                <li><a href="{{ url_for('routes.history') }}" class=".btn-predict">History</a></li>
                     <li class="profile-icon">
                         <a href="#" class="profile-link">
                             <img src="{{ url_for('static', filename='images/profilePicture.png') }}" 
@@ -71,7 +71,7 @@
 
                         <!-- Dropdown Menu -->
                         <div class="dropdown-menu">
-                            <a href="{{ url_for('logout') }}" class="dropdown-item">Logout</a>
+                            <a href="{{ url_for('routes.logout') }}" class="dropdown-item">Logout</a>
                         </div>
                     </li>   
                 {% endif %}
