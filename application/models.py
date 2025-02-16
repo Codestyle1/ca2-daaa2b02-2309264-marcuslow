@@ -59,6 +59,7 @@ class ImagePrediction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('login.id'), nullable=False)
     class_label = db.Column(db.String(50), nullable=False)  # The class label (e.g., "A", "B")
+    model_name = db.Column(db.String(50), nullable=False)  # New column for model name
     image_filename = db.Column(db.String(255), nullable=False)  # Filename of the generated image inside Blackblaze
     predicted_on = db.Column(db.DateTime, nullable=False, default=get_singapore_time)
 

@@ -2,24 +2,28 @@
 <!-- Dark background img -->
 {% set background_image = 'images/dark_bg.jpg' %}
 {% block content %}
-    <!-- Sidebar for Prediction Stats Summary -->
-    <div class="sidebar" id="stats-sidebar">
-        <div class="content">       
+
+    <button id="show-stats-btn">View Prediction Stats</button>
+
+    <div class="modal-history" id="stats-modal">
+        <div class="modal-history-content">
             <h3>Prediction Stats Summary</h3>
             <p>Total Predictions: {{ predictions.total }}</p>
-            <p>Average Prediction Time: {{ average_prediction_time }}</p>
+            <p>Average Prediction Time: {{ average_prediction_time }} seconds</p>
+            <p>Success Rate: {{ success_rate }}%</p>
             <form id="stats-filter-form">
                 <label for="date-range">Date Range:</label>
                 <input type="date" id="start-date" name="start-date">
                 <input type="date" id="end-date" name="end-date">
                 <button type="submit">Filter</button>
             </form>
+            <button class="close-btn" onclick="closeModal()">Close</button>
         </div>
-    </div>  
+    </div>
+
 
     <!-- Main Content -->
     <div class="main-content">
-        <h2>Image Generation History</h2>
         <!-- If no predictions, display a message and link to create a new prediction -->
         {% if not predictions.items %}
             <!-- Add a dynamic greeting message with the username -->   
@@ -35,8 +39,9 @@
                     <tr>
                         <th scope="col">#</th>
                         <th scope="col">Image</th>
-                        <th scope="col">Predicted On</th>
                         <th scope="col">Class Label</th>
+                        <th scope="col">Model</th>
+                        <th scope="col">Predicted On</th>
                         <th scope="col">Actions</th>
                     </tr>
                 </thead>
@@ -48,8 +53,9 @@
                                 <!-- Display the image -->
                                 <img src="{{ prediction.image_url }}" alt="Generated Image" style="max-width: 100px;">
                             </td>
-                            <td>{{ prediction.predicted_on }}</td>
                             <td>{{ prediction.class_label }}</td>
+                            <td>{{ prediction.model_name }}</td>
+                            <td>{{ prediction.predicted_on }}</td>
                             <td>
                                 <!-- Add any actions you want here, e.g., delete, edit, etc. -->
                                 <a href="#" class="btn-sm btn-danger">Delete</a>

@@ -107,6 +107,12 @@ header {
     background-color: #1e7e34 !important; /* Darker green on hover */
 }
 
+/* CSS for the "Generating..." state button */
+.btn-generate[disabled] {
+    background-color: #999 !important;  /* Light gray color when disabled */
+    cursor: not-allowed;  /* Change cursor to show it's not clickable */
+}
+
 
 /* ************************************************** */
 /* History Page */

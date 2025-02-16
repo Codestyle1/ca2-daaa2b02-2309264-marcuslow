@@ -144,6 +144,34 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('home'))
 
+# Function to remove previous image
+def remove_previous_image():
+    """
+    This function removes all previously generated images in the 'gen_images' directory
+    except for the most recent one, ensuring only one image exists at a time.
+    """
+    # Get the list of files in the 'gen_images' folder
+    existing_images = os.listdir(IMAGE_DIR)
+    
+    # Filter out the image files (assuming image files have extensions like .png)
+    image_files = [f for f in existing_images if f.endswith('.png')]
+
+    # If there are any images, proceed with removal
+    if image_files:
+        # Sort images by creation time (ascending), so the latest one is the last
+        image_files.sort(key=lambda x: os.path.getctime(os.path.join(IMAGE_DIR, x)))
+        
+        # Remove all images
+        for image in image_files:
+            file_path = os.path.join(IMAGE_DIR, image)
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                print(f"Error removing image {image}: {e}")
+
+        # After removal, leave the most recent image by not touching the last image
+        latest_image = image_files[-1]
+
 # Handle http://127.0.0.1:5000/predict
 @app.route("/predict", methods=['GET', 'POST'])
 @login_required
@@ -152,119 +180,53 @@ def predict():
     class_label = None  # Variable to store the user's input
 
     if request.method == 'POST':
-        # Retrieve the class label input from the form
-        class_label = request.form.get('class_label').lower()
+        remove_previous_image()  # Remove previous image before generating a new one
+
+        class_label = request.form.get('class_label', '').lower()
+        model_name = request.form.get('model_name', 'cgan').lower()  # Get model_name from frontend (default to 'cgan')
 
         if class_label and len(class_label) == 1 and class_label.isalpha():
-            # Generate the image using the provided class label
-            buffer, img_filename = generate_image_from_class(class_label, current_user.id, model_name="cgan")
+            print(f"Generating image for class '{class_label}' using model: {model_name}")  # Debugging log
+
+            # Generate the image using the selected model
+            buffer, img_filename = generate_image_from_class(class_label, current_user.id, model_name=model_name)
 
             if img_filename:
-                # Save the temporary image to the gen_images folder
                 temp_path = os.path.join(IMAGE_DIR, img_filename)
                 with open(temp_path, 'wb') as f:
-                    f.write(buffer.getvalue())  # Write the BytesIO buffer to the file
+                    f.write(buffer.getvalue())  # Write the image buffer to file
 
-                # Return the image URL and success status
                 return jsonify({
                     'success': True,
-                    'class_label': class_label,  # Send the class label back to the client
+                    'class_label': class_label,
                     'image_url': url_for('serve_gen_images', filename=img_filename),
-                    'random_generate_button': False,  # Indicate this was not a random generation
-                    'temp_filename': img_filename  # Pass the temporary filename to the frontend
+                    'random_generate_button': False,
+                    'temp_filename': img_filename,
+                    'selected_model': model_name  # Return the model used
                 })
             else:
-                return jsonify({
-                    'success': False,
-                    'error': 'Failed to generate image.',
-                })
+                return jsonify({'success': False, 'error': 'Failed to generate image.'})
         else:
             flash('Please enter a valid class label (single letter A-Z)', 'danger')
 
-    # If it's a GET request or validation fails, render the template
     return render_template('predict.html', img_filename=img_filename, class_label=class_label)
-
-# Helper function to validate the input
-def validate_input(class_label):
-    return bool(re.match(r'^[A-Z ]{1,50}$', class_label))
-
-# Handle /predict_words
-@app.route('/predict_words', methods=['POST'])
-def predict_words():
-    class_labels = request.form.get('class_label_combined').upper().strip()
-
-    # Validation: Only allow letters A-Z and spaces, up to 50 characters
-    if not validate_input(class_labels):
-        flash('Please enter up to 50 letters (A-Z), spaces are allowed but they do not count toward the limit.', 'danger')
-        return jsonify({"success": False, "message": "Invalid input. Enter only A-Z and spaces, up to 50 characters."})
-
-    images = []
-    temp_filenames = []
-
-    # Split input into 10-character chunks, including spaces
-    words = [class_labels[i:i+10] for i in range(0, len(class_labels), 10)]
-
-    for word in words:
-        word_images = []
-        for letter in word:
-            if letter == " ":
-                # Handle space as a placeholder
-                sample_letter = "A"  # Using "A" as a placeholder for spacing
-                buffer, _ = generate_image_from_class(sample_letter, current_user.id, model_name="cgan")
-                if buffer:
-                    sample_img = Image.open(buffer)
-                    img = Image.new("RGB", sample_img.size, color=sample_img.getpixel((0, 0)))  # Match background color
-                else:
-                    img = Image.new("RGB", (30, 30), color="white")  # Fallback default
-                word_images.append(img)
-            else:
-                buffer, img_filename = generate_image_from_class(letter, current_user.id, model_name="cgan")
-                if buffer:
-                    img = Image.open(buffer)
-                    word_images.append(img)
-                    temp_filenames.append(img_filename)
-
-        # Combine letters horizontally for each word
-        if word_images:
-            combined_word_img = Image.new('RGB', (sum(img.width for img in word_images), word_images[0].height))
-            x_offset = 0
-            for img in word_images:
-                combined_word_img.paste(img, (x_offset, 0))
-                x_offset += img.width
-            images.append(combined_word_img)
-
-    # Combine rows vertically
-    if images:
-        total_height = sum(img.height for img in images)
-        max_width = max(img.width for img in images)
-        final_image = Image.new('RGB', (max_width, total_height))
-
-        y_offset = 0
-        for img in images:
-            final_image.paste(img, (0, y_offset))
-            y_offset += img.height
-
-        final_filename = f"user_{current_user.id}_combined_{datetime.now().strftime('%Y%m%d%H%M%S')}.png"
-        final_path = os.path.join(IMAGE_DIR, final_filename)
-        final_image.save(final_path)
-
-        return jsonify({
-            "success": True,
-            "class_label": class_labels,
-            "image_url": f"/gen_images/{final_filename}",
-            "combined_img_filename": final_filename,
-            "temp_filenames": temp_filenames
-        })
-
-    return jsonify({"success": False, "message": "Could not generate image. Please try again."})
 
 # Handle http://127.0.0.1:5000/predict_random
 @app.route('/predict_random', methods=['POST'])
 def predict_random():
+    # Get the selected model from the request JSON
+    data = request.get_json()  # Parse the incoming JSON data
+    model_name = data.get('model_name', 'dcgan')  # Default to 'cgan' if model_name is not provided
+    print(model_name, "predict_random")
+
+    # Remove previous image before generating a new one
+    remove_previous_image()
+
     # Generate a random letter (a-z)
     class_label = random.choice('abcdefghijklmnopqrstuvwxyz')
-    # Generate the image using the random letter and current user's ID
-    buffer, img_filename = generate_image_from_class(class_label, current_user.id, model_name="cgan")  # Unpack the tuple
+    
+    # Generate the image using the random letter and current user's ID with the selected model
+    buffer, img_filename = generate_image_from_class(class_label, current_user.id, model_name=model_name)  # Unpack the tuple
     if img_filename:
         # Save the temporary image to the gen_images folder
         temp_path = os.path.join(IMAGE_DIR, img_filename)
@@ -285,55 +247,136 @@ def predict_random():
             'success': False,
             'error': 'Failed to generate image.',
         })
+    
+# Helper function to validate the input
+def validate_input(class_label):
+    return bool(re.match(r'^[A-Za-z ]{1,50}$', class_label))
+
+# Handle http://127.0.0.1:5000/predict_words
+@app.route('/predict_words', methods=['POST'])
+def predict_words():
+    class_labels = request.form.get('class_label_combined', '').strip()
+    model_name = request.form.get('model_name', 'cgan')  # Default to CGAN if not provided
+
+    if not validate_input(class_labels):
+        return jsonify({"success": False, "message": "Invalid input. Enter only A-Z and spaces, up to 50 characters."})
+    
+    remove_previous_image()
+
+    images = []
+    temp_filenames = []
+    words = [class_labels[i:i+10] for i in range(0, len(class_labels), 10)]
+
+    for word in words:
+        word_images = []
+        for letter in word:
+            if letter == " ":
+                sample_letter = "A"
+                buffer, _ = generate_image_from_class(sample_letter, current_user.id, model_name)
+                if buffer:
+                    sample_img = Image.open(buffer)
+                    img = Image.new("RGB", sample_img.size, color=sample_img.getpixel((0, 0)))
+                else:
+                    img = Image.new("RGB", (30, 30), color="white")
+                word_images.append(img)
+            else:
+                buffer, img_filename = generate_image_from_class(letter, current_user.id, model_name)
+                if buffer:
+                    img = Image.open(buffer)
+                    word_images.append(img)
+                    temp_filenames.append(img_filename)
+
+        if word_images:
+            combined_word_img = Image.new('RGB', (sum(img.width for img in word_images), word_images[0].height))
+            x_offset = 0
+            for img in word_images:
+                combined_word_img.paste(img, (x_offset, 0))
+                x_offset += img.width
+            images.append(combined_word_img)
+
+    if images:
+        total_height = sum(img.height for img in images)
+        max_width = max(img.width for img in images)
+        final_image = Image.new('RGB', (max_width, total_height))
+
+        y_offset = 0
+        for img in images:
+            final_image.paste(img, (0, y_offset))
+            y_offset += img.height
+
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        unique_id = str(uuid.uuid4())[:8]
+        unique_filename = f"user_{current_user.id}_combined_ts_{timestamp}_id_{unique_id}.png"
+        final_path = os.path.join(IMAGE_DIR, unique_filename)
+        final_image.save(final_path)
+
+        return jsonify({
+            "success": True,
+            "class_label": class_labels,
+            "image_url": url_for('serve_gen_images', filename=unique_filename),
+            "combined_img_filename": unique_filename,
+            "temp_filenames": temp_filenames
+        })
+
+    return jsonify({"success": False, "message": "Could not generate image. Please try again."})
 
 def generate_image_from_class(class_label, user_id, model_name):
     try:
-        # Convert class label (e.g., "S") to an integer index (A=0, ..., Z=25)
+        # Generate a 128-dimensional latent vector for DCGAN
+        latent_vector_dcgan = np.random.rand(128).astype(np.float32)  # Shape: (1, 128)
+        # Generate a 100-dimensional latent vector for CGAN
+        latent_vector_cgan = np.random.rand(100).astype(np.float32)  # Shape: (1, 100)
+
+        # Convert class label to an integer index (A=0, ..., Z=25)
         class_index = ord(class_label.lower()) - ord('a')
-        # Generate a 100-dimensional latent vector with random floats
-        latent_vector = np.random.rand(100).astype(np.float32)  # Shape should be (1, 100)
-        # Construct the one-hot encoded vector for the class
-        one_hot_encoded_class = np.array([1.0 if i == class_index else 0.0 for i in range(26)], dtype=np.float32)  # Shape should be (1, 26)
-        # Prepare the payload as a dictionary (numpy arrays should be converted to lists)
-        instances = [{
-            "input_3": one_hot_encoded_class.astype(np.float32).tolist(),
-            "input_2": latent_vector.astype(np.float32).tolist()
-        }]
+        # One-hot encode the class for CGAN (not needed for DCGAN)
+        one_hot_encoded_class = np.array([1.0 if i == class_index else 0.0 for i in range(26)], dtype=np.float32)  
+
+        # Prepare request payload based on the model type
+        if model_name == 'cgan':
+            instances = [{
+                "input_3": one_hot_encoded_class.tolist(),  # One-hot label
+                "input_2": latent_vector_cgan.tolist()      # Latent vector (100-dim)
+            }]
+        elif model_name == 'dcgan':
+            instances = [{
+                "input_1": latent_vector_dcgan.tolist()     # Only Latent vector (128-dim)
+            }]
+        else:
+            print(f"Error: Unsupported model '{model_name}'")
+            return None, None
+
         # Serialize the payload into JSON format
         data = json.dumps({"signature_name": "serving_default", "instances": instances})
 
-        # # Server URL
+        # API Endpoint
         url_gen = f'https://gan-gen-ca2.onrender.com/v1/models/{model_name}:predict'
-
-        # Send the request to the GAN model
+        
+        # Send request
         headers = {"Content-Type": "application/json"}
         json_response = requests.post(url_gen, data=data, headers=headers)
 
-        # Check for a successful response
+        # Check response status
         if json_response.status_code == 200:
-            # Parse the JSON response to get the predictions (image data)
             predictions = json.loads(json_response.text)['predictions']
-            # Assuming the predictions contain the image data as a 4D array: [batch_size, height, width, channels]
-            image_array = np.array(predictions[0])  # Get the first image in the batch
-            # Ensure the image is 28x28 with a single channel (grayscale)
-            image_array = image_array.squeeze(axis=-1)  # Remove the last channel dimension (1) if it exists
-            # Ensure the pixel values are in the range [0, 255] and cast to uint8
+            image_array = np.array(predictions[0])  # Extract image data
+
+            # Process image
+            image_array = image_array.squeeze(axis=-1)  
             image_array = np.clip(image_array * 255, 0, 255).astype(np.uint8)
-            # Create a PIL Image from the numpy array
             img = Image.fromarray(image_array)
-            # Resize the image to 300x300 pixels
-            img = img.resize((300, 300), Image.Resampling.LANCZOS)  # Use high-quality resampling
-            # Generate a unique identifier
-            unique_id = str(uuid.uuid4())[:8]  # First 8 characters of a UUID
-            # Get the current timestamp
-            timestamp = datetime.now().strftime("%Y%m%d%H%M")  # Format: YYYYMMDDHHMMSS
-            # Construct the filename with user_id, class_label, timestamp, and unique_id
-            image_filename = f"user_{user_id}_label_{class_label}_ts_{timestamp}_id_{unique_id}.png"
-            # Save the image to an in-memory buffer
+            img = img.resize((300, 300), Image.Resampling.LANCZOS)
+
+            # Generate filename
+            unique_id = str(uuid.uuid4())[:8]
+            timestamp = datetime.now().strftime("%Y%m%d%H%M")
+            image_filename = f"user_{user_id}_ts_{timestamp}_id_{unique_id}.png"
+
+            # Save to buffer
             buffer = BytesIO()
             img.save(buffer, format="PNG")
-            buffer.seek(0)  # Rewind the buffer to the beginning
-            # Return the buffer and the filename
+            buffer.seek(0)
+
             return buffer, image_filename
         else:
             print(f"Error with GAN model API response: {json_response.status_code}, {json_response.content}")
@@ -348,25 +391,29 @@ def save_image():
     try:
         # Parse the JSON payload
         data = request.get_json()
-        temp_filename = data.get('temp_filename')  
-        class_label = data.get('class_label')
 
-        if not temp_filename or not class_label:
-            return jsonify({'success': False, 'error': 'Missing temporary filename or class label.'}), 400
+        temp_filename = data.get('temp_filename')  # Now receiving the combined image filename
+        class_label = data.get('class_label')
+        model_name = data.get('model_name')
+
+        if not temp_filename or not class_label or not model_name:
+            print("Missing temp_filename, class_label, or model_name")  # Debugging line to check what is missing
+            return jsonify({'success': False, 'error': 'Missing required data (temp_filename, class_label, model_name).'}), 400
 
         # Load the temporary image from the gen_images folder
         temp_path = os.path.join(IMAGE_DIR, temp_filename)
         if not os.path.exists(temp_path):
+            print(f"Image not found: {temp_path}")  # Debugging line to check file existence
             return jsonify({'success': False, 'error': 'Temporary image file not found.'}), 400
 
         # Open the image and save it to an in-memory buffer
         with open(temp_path, 'rb') as f:
             buffer = BytesIO(f.read())
 
-        # Generate a unique identifier and timestamp
-        unique_id = str(uuid.uuid4())[:8]  
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")  
-        image_filename = f"user_{current_user.id}_label_{class_label}_ts_{timestamp}_id_{unique_id}.png"
+        # Generate a unique identifier and timestamp for the final image
+        unique_id = str(uuid.uuid4())[:8]
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        image_filename = f"user_{current_user.id}_ts_{timestamp}_id_{unique_id}.png"
 
         # Upload the image to Backblaze B2
         uploaded_filename = BackblazeHelper().upload_file(buffer, image_filename)
@@ -375,15 +422,17 @@ def save_image():
         new_prediction = ImagePrediction(
             user_id=current_user.id,
             image_filename=uploaded_filename,
-            class_label=class_label
+            class_label=class_label,
+            model_name=model_name  # Store the selected model name in the database
         )
         db.session.add(new_prediction)
         db.session.commit()
 
-        # Delete the temporary image file after saving
-        os.remove(temp_path)
+        # Clean up the temporary image
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
-        # Return JSON response with success and redirection URL
+        # Return success response
         return jsonify({'success': True, 'redirect_url': url_for('history')})
 
     except Exception as e:
