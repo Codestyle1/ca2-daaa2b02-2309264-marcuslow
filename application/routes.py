@@ -176,9 +176,9 @@ def remove_previous_image():
         latest_image = image_files[-1]
 
 # Handle http://127.0.0.1:5000/predict
-@routes_bp.route("/predict", methods=['GET', 'POST'])
+@routes_bp.route("/generate", methods=['GET', 'POST'])
 @login_required
-def predict():
+def generate():
     img_filename = None  # Variable to store the generated image filename
     class_label = None  # Variable to store the user's input
 
@@ -212,15 +212,15 @@ def predict():
         else:
             flash('Please enter a valid class label (single letter A-Z)', 'danger')
 
-    return render_template('predict.html', img_filename=img_filename, class_label=class_label)
+    return render_template('generate.html', img_filename=img_filename, class_label=class_label)
 
-# Handle http://127.0.0.1:5000/predict_random
-@routes_bp.route('/predict_random', methods=['POST'])
-def predict_random():
+# Handle http://127.0.0.1:5000/generate_random
+@routes_bp.route('/generate_random', methods=['POST'])
+def generate_random():
     # Get the selected model from the request JSON
     data = request.get_json()  # Parse the incoming JSON data
     model_name = data.get('model_name', 'cgan')  # Default to 'cgan' if model_name is not provided
-    print(model_name, "predict_random")
+    print(model_name, "generate_random")
 
     # Remove previous image before generating a new one
     remove_previous_image()
@@ -255,9 +255,9 @@ def predict_random():
 def validate_input(class_label):
     return bool(re.match(r'^[A-Za-z ]{1,50}$', class_label))
 
-# Handle http://127.0.0.1:5000/predict_words
-@routes_bp.route('/predict_words', methods=['POST'])
-def predict_words():
+# Handle http://127.0.0.1:5000/generate_words
+@routes_bp.route('/generate_words', methods=['POST'])
+def generate_words():
     class_labels = request.form.get('class_label_combined', '').strip()
     model_name = request.form.get('model_name', 'cgan')  # Default to CGAN if not provided
 
@@ -447,17 +447,181 @@ def save_image():
 @login_required
 def history():
     page = request.args.get('page', 1, type=int)
-    per_page = 4 # Number of predictions per page
+    per_page = 4 # Number of generations per page
     
-    # Fetch predictions with pagination
-    predictions = ImagePrediction.query.filter_by(user_id=current_user.id).paginate(page=page, per_page=per_page)
+    # Fetch generations with pagination
+    generations = ImagePrediction.query.filter_by(user_id=current_user.id).paginate(page=page, per_page=per_page)
     
     # Generate signed URLs for each image
     backblaze_helper = BackblazeHelper()
-    for prediction in predictions.items:
-        prediction.image_url = backblaze_helper.generate_signed_url(prediction.image_filename)
+    for generation in generations.items:
+        generation.image_url = backblaze_helper.generate_signed_url(generation.image_filename)
     
-    return render_template('history.html', predictions=predictions)
+    return render_template('history.html', generations=generations)
+
+###############################################################
+#################### API SECTION ##############################
+###############################################################
+## LOGIN API (LOGIN AS USER)
+@routes_bp.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+
+    user = Login.query.filter_by(username=username, email=email).first()
+
+    if user and check_password_hash(user.password_hash, password):
+        login_user(user)
+        session['user_id'] = user.id
+        session['username'] = user.username
+        session['user_logged_in'] = True
+
+        return jsonify({'success': True, 'message': 'Login successful'})
+    else:
+        return jsonify({'success': False, 'message': 'Invalid credentials'})
+
+## LOGIN API (RETRIEVE USER INFO)
+@routes_bp.route("/api/user_info", methods=['GET'])
+@login_required
+def api_user_info():
+    # Retrieve user information from the current_user object
+    user_info = {
+        'username': current_user.username,
+        'email': current_user.email,
+        'created_on': current_user.created_on.strftime("%Y-%m-%d %H:%M:%S")  # Assuming 'created_on' is a datetime field
+    }
+    return jsonify({
+        'success': True,
+        'user_info': user_info
+    })
+
+## SIGNUP API
+@routes_bp.route('/api/signup', methods=['POST'])
+def api_signup():
+    data = request.get_json()
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+
+    if Login.query.filter_by(email=email).first():
+        return jsonify({'success': False, 'message': 'Email already in use'})
+
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+    new_user = Login(username=username, email=email, password_hash=hashed_password)
+    db.session.add(new_user)
+    db.session.commit()
+
+    login_user(new_user)
+    session['user_id'] = new_user.id
+    session['username'] = new_user.username
+    session['user_logged_in'] = True
+
+    return jsonify({'success': True, 'message': 'Signup successful'})
+
+## PREDICT API
+@routes_bp.route("/api/generate", methods=['POST'])
+@login_required
+def api_generate():
+    data = request.get_json()
+    class_label = data.get('class_label', '').lower()
+    model_name = data.get('model_name', 'cgan')
+
+    if class_label and len(class_label) == 1 and class_label.isalpha():
+        buffer, img_filename = generate_image_from_class(class_label, current_user.id, model_name=model_name)
+
+        if img_filename:
+            img_url = url_for('routes.serve_gen_images', filename=img_filename, _external=True)
+            return jsonify({
+                'success': True,
+                'class_label': class_label,
+                'image_url': img_url
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Image generation failed'})
+    else:
+        return jsonify({'success': False, 'message': 'Invalid class label'})
+    
+## PREDICT RANDOM API
+@routes_bp.route("/api/generate_random", methods=['POST'])
+def api_generate_random():
+    data = request.get_json()
+    model_name = data.get('model_name', 'cgan')
+
+    class_label = random.choice('abcdefghijklmnopqrstuvwxyz')
+    buffer, img_filename = generate_image_from_class(class_label, current_user.id, model_name=model_name)
+
+    if img_filename:
+        img_url = url_for('routes.serve_gen_images', filename=img_filename, _external=True)
+        return jsonify({
+            'success': True,
+            'class_label': class_label,
+            'image_url': img_url
+        })
+    else:
+        return jsonify({'success': False, 'message': 'Random image generation failed'})
+
+## SAVE IMAGE API
+@routes_bp.route("/api/save_image", methods=['POST'])
+@login_required
+def api_save_image():
+    data = request.get_json()
+    temp_filename = data.get('temp_filename')
+    class_label = data.get('class_label')
+    model_name = data.get('model_name')
+
+    if not temp_filename or not class_label or not model_name:
+        return jsonify({'success': False, 'message': 'Missing required fields'})
+
+    temp_path = os.path.join(IMAGE_DIR, temp_filename)
+
+    if os.path.exists(temp_path):
+        with open(temp_path, 'rb') as f:
+            buffer = BytesIO(f.read())
+
+        unique_id = str(uuid.uuid4())[:8]
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        image_filename = f"user_{current_user.id}_ts_{timestamp}_id_{unique_id}.png"
+
+        uploaded_filename = BackblazeHelper().upload_file(buffer, image_filename)
+
+        new_prediction = ImagePrediction(
+            user_id=current_user.id,
+            image_filename=uploaded_filename,
+            class_label=class_label,
+            model_name=model_name
+        )
+        db.session.add(new_prediction)
+        db.session.commit()
+
+        # Clean up temporary image
+        os.remove(temp_path)
+
+        return jsonify({'success': True, 'message': 'Image saved successfully'})
+    else:
+        return jsonify({'success': False, 'message': 'Temporary image not found'})
+
+## HISTORY API
+@routes_bp.route("/api/history", methods=['GET'])
+@login_required
+def api_history():
+    page = request.args.get('page', 1, type=int)
+    per_page = 4
+    generations = ImagePrediction.query.filter_by(user_id=current_user.id).paginate(page=page, per_page=per_page)
+
+    history = []
+    backblaze_helper = BackblazeHelper()
+
+    for generation in generations.items:
+        img_url = backblaze_helper.generate_signed_url(generation.image_filename)
+        history.append({
+            'image_url': img_url,
+            'class_label': generation.class_label,
+            'model_name': generation.model_name
+        })
+
+    return jsonify({'success': True, 'history': history})
 
 if __name__ == "__main__":
     routes_bp.run(debug=True)  # This will run the Flask app

@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (randomAlphabetBtn) {
         randomAlphabetBtn.addEventListener('click', function () {
 
-            fetch(predictRandomUrl, {
+            fetch(generateRandomUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ model_name: selectedModel }) // Make sure selectedModel is defined
@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            fetch(predictUrl, {
+            fetch(generateUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `class_label=${classLabelInput}&model_name=${selectedModel}`
@@ -164,7 +164,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 imgElement.src = '/static/images/loading_img.gif';  // Show loading GIF
 
                 // Send a request to generate the combined image
-                fetch('/predict_words', {
+                fetch('/generate_words', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: `class_label_combined=${encodeURIComponent(classLabels)}&model_name=${encodeURIComponent(selectedModel)}`

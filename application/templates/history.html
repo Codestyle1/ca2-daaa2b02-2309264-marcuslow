@@ -8,7 +8,7 @@
     <div class="modal-history" id="stats-modal">
         <div class="modal-history-content">
             <h3>Prediction Stats Summary</h3>
-            <p>Total Predictions: {{ predictions.total }}</p>
+            <p>Total Predictions: {{ generations.total }}</p>
             <p>Average Prediction Time: {{ average_prediction_time }} seconds</p>
             <p>Success Rate: {{ success_rate }}%</p>
             <form id="stats-filter-form">
@@ -25,12 +25,12 @@
     <!-- Main Content -->
     <div class="main-content">
         <!-- If no predictions, display a message and link to create a new prediction -->
-        {% if not predictions.items %}
+        {% if not generations.items %}
             <!-- Add a dynamic greeting message with the username -->   
             <div class="no-history-container">
                 <p class="intro-text">Hello, {{ username }}!</p>
                 <p class="no-history-message">It looks like you have no history yet.</p>
-                <p><a href="{{ url_for('routes.predict') }}" class="create-prediction-link">Create a new prediction?</a></p>
+                <p><a href="{{ url_for('routes.generate') }}" class="create-prediction-link">Create a new generation?</a></p>
             </div>
         {% else %}
             <p class="intro-text">Hello, {{ username }}! Below is your personal Image Generation history:</p>
@@ -46,16 +46,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for prediction in predictions %}
+                    {% for generation in generations %}
                         <tr>
                             <td>{{ loop.index }}</td>
                             <td>
                                 <!-- Display the image -->
-                                <img src="{{ prediction.image_url }}" alt="Generated Image" style="max-width: 100px;">
+                                <img src="{{ generation.image_url }}" alt="Generated Image" style="max-width: 100px;">
                             </td>
-                            <td>{{ prediction.class_label }}</td>
-                            <td>{{ prediction.model_name }}</td>
-                            <td>{{ prediction.predicted_on }}</td>
+                            <td>{{ generation.class_label }}</td>
+                            <td>{{ generation.model_name }}</td>
+                            <td>{{ generation.predicted_on }}</td>
                             <td>
                                 <!-- Add any actions you want here, e.g., delete, edit, etc. -->
                                 <a href="#" class="btn-sm btn-danger">Delete</a>
@@ -68,9 +68,9 @@
             <!-- Pagination Links -->
             <nav aria-label="Page navigation">
                 <ul class="pagination">
-                    {% if predictions.has_prev %}
+                    {% if generations.has_prev %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('routes.history', page=predictions.prev_num) }}">Previous</a>
+                            <a class="page-link" href="{{ url_for('routes.history', page=generations.prev_num) }}">Previous</a>
                         </li>
                     {% else %}
                         <li class="page-item disabled">
@@ -78,9 +78,9 @@
                         </li>
                     {% endif %}
                     
-                    {% for page_num in predictions.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% for page_num in generations.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                         {% if page_num %}
-                            {% if page_num == predictions.page %}
+                            {% if page_num == generations.page %}
                                 <li class="page-item active">
                                     <span class="page-link">{{ page_num }}</span>
                                 </li>
@@ -96,9 +96,9 @@
                         {% endif %}
                     {% endfor %}
                     
-                    {% if predictions.has_next %}
+                    {% if generations.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('routes.history', page=predictions.next_num) }}">Next</a>
+                            <a class="page-link" href="{{ url_for('routes.history', page=generations.next_num) }}">Next</a>
                         </li>
                     {% else %}
                         <li class="page-item disabled">
