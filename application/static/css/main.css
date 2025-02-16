@@ -131,6 +131,16 @@ header {
     color: white;
 }
 
+/* Add a fade-out transition when deleting a row */
+.table tbody tr {
+    transition: opacity 1s ease-out;
+}
+
+.table tbody tr.fade-out {
+    opacity: 0;
+}
+
+
 .pagination .page-link {
     background-color: #f8f9fa;
     color: #333;

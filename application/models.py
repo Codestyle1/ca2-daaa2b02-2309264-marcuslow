@@ -61,6 +61,7 @@ class ImagePrediction(db.Model):
     class_label = db.Column(db.String(50), nullable=False)  # The class label (e.g., "A", "B")
     model_name = db.Column(db.String(5), nullable=False)  # New column for model name
     image_filename = db.Column(db.String(255), nullable=False)  # Filename of the generated image inside Blackblaze
+    image_url = db.Column(db.String(512))  # New column to store the signed URL
     predicted_on = db.Column(db.DateTime, nullable=False, default=get_singapore_time)
 
     def __repr__(self):

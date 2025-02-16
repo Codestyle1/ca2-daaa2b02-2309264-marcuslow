@@ -59,3 +59,24 @@ class BackblazeHelper:
         except Exception as e:
             print(f"Error: {e} (File may not exist)")
             return None
+        
+    def delete_all_versions(self, file_name):
+        """
+        Deletes all versions of a file from Backblaze B2 using the file name.
+        :param file_name: The name of the file in Backblaze.
+        :return: True if all versions were successfully deleted, False otherwise.
+        """
+        try:
+            # List all versions of the file
+            versions = self.bucket.list_file_versions(file_name)
+            
+            # Iterate over the versions and delete each one
+            for version in versions:
+                self.bucket.delete_file_version(version.id_, version.file_name)
+                print(f"Deleted file version {version.file_name} with version ID {version.id_}.")
+            
+            print(f"All versions of {file_name} deleted successfully.")
+            return True
+        except Exception as e:
+            print(f"Error deleting versions of file {file_name}: {e}")
+            return False

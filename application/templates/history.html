@@ -1,32 +1,68 @@
 {% extends 'layout.html' %}
-<!-- Dark background img -->
 {% set background_image = 'images/dark_bg.jpg' %}
 {% block content %}
 
+    <!-- Button to open stats modal -->
     <button id="show-stats-btn">View Prediction Stats</button>
 
+    <!-- Stats Modal (clicking outside closes it) -->
     <div class="modal-history" id="stats-modal">
         <div class="modal-history-content">
             <h3>Prediction Stats Summary</h3>
             <p>Total Predictions: {{ generations.total }}</p>
-            <p>Average Prediction Time: {{ average_prediction_time }} seconds</p>
-            <p>Success Rate: {{ success_rate }}%</p>
-            <form id="stats-filter-form">
-                <label for="date-range">Date Range:</label>
-                <input type="date" id="start-date" name="start-date">
-                <input type="date" id="end-date" name="end-date">
-                <button type="submit">Filter</button>
-            </form>
-            <button class="close-btn" onclick="closeModal()">Close</button>
+            <p>Total Pages: {{ generations.pages }}</p>
+            <p>Time since first prediction: <span id="time-since-first"></span></p>
+            <p>Total Deleted Rows: {{ deleted_count }}</p>
+            <p>Saved Models: CGAN - {{ saved_models.cgan }}, DCGAN - {{ saved_models.dcgan }}</p>
+            <p>Favorites Saved: {{ favorites_count }}</p>
         </div>
     </div>
 
+    <!-- Button to open filter modal -->
+    <button id="show-filter-btn">Filter Predictions</button>
+
+    <!-- Rectangle area that appears below the button -->
+    <div id="filter-container" class="filter-container">
+        <!-- Filter Form -->
+        <form id="filter-form">
+            <!-- Class Label Slider -->
+            <div>
+                <label for="class-slider">Class Label (A-Z):</label>
+                <input type="range" id="class-slider" min="0" max="25" value="0">
+                <span id="slider-value"></span>
+            </div>
+        
+            <!-- Model Filter -->
+            <div>
+                <label for="model">Model:</label>
+                <select id="model" name="model">
+                    <option value="">Select Model</option>
+                    <option value="cgan">CGAN</option>
+                    <option value="dcgan">DCGAN</option>
+                </select>
+            </div>
+        
+            <!-- Class Length Filter -->
+            <div>
+                <label for="class-length">Class Label Length (max):</label>
+                <input type="number" id="class-length" name="class_label_length" placeholder="Enter max length">
+            </div>
+        
+            <button type="submit" id="apply-btn">Apply Filter</button>
+            <button type="button" id="reset-filter-btn">Reset</button>
+        </form>        
+    </div>
+
+    <!-- Hidden div to pass pagination data to JavaScript -->
+    <div id="pagination-data" 
+         data-current-page="{{ generations.page }}" 
+         data-total-pages="{{ generations.pages }}" 
+         style="display: none;">
+    </div>
 
     <!-- Main Content -->
     <div class="main-content">
-        <!-- If no predictions, display a message and link to create a new prediction -->
         {% if not generations.items %}
-            <!-- Add a dynamic greeting message with the username -->   
             <div class="no-history-container">
                 <p class="intro-text">Hello, {{ username }}!</p>
                 <p class="no-history-message">It looks like you have no history yet.</p>
@@ -45,26 +81,24 @@
                         <th scope="col">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for generation in generations %}
-                        <tr>
-                            <td>{{ loop.index }}</td>
+                <tbody id="predictions-table-body">
+                    {% for generation in generations.items %}
+                        <tr id="prediction-{{ generation.id }}">
+                            <td>{{ generations.per_page * (generations.page - 1) + loop.index }}</td>
                             <td>
-                                <!-- Display the image -->
-                                <img src="{{ generation.image_url }}" alt="Generated Image" style="max-width: 100px;">
+                                <img src="{{ generation.image_url }}" alt="Generated Image" style="max-width: 100px;" loading="lazy">
                             </td>
                             <td>{{ generation.class_label }}</td>
                             <td>{{ generation.model_name }}</td>
                             <td>{{ generation.predicted_on }}</td>
                             <td>
-                                <!-- Add any actions you want here, e.g., delete, edit, etc. -->
-                                <a href="#" class="btn-sm btn-danger">Delete</a>
+                                <button class="btn-sm btn-danger" onclick="deletePrediction('{{ generation.id }}')">Delete</button>
                             </td>
                         </tr>
                     {% endfor %}
-                </tbody>
+                </tbody>                
             </table>
-            
+
             <!-- Pagination Links -->
             <nav aria-label="Page navigation">
                 <ul class="pagination">
@@ -77,7 +111,7 @@
                             <span class="page-link">Previous</span>
                         </li>
                     {% endif %}
-                    
+
                     {% for page_num in generations.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                         {% if page_num %}
                             {% if page_num == generations.page %}
@@ -95,7 +129,7 @@
                             </li>
                         {% endif %}
                     {% endfor %}
-                    
+
                     {% if generations.has_next %}
                         <li class="page-item">
                             <a class="page-link" href="{{ url_for('routes.history', page=generations.next_num) }}">Next</a>
@@ -109,4 +143,5 @@
             </nav>
         {% endif %}
     </div>
+
 {% endblock %}

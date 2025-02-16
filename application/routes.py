@@ -18,6 +18,7 @@ from io import BytesIO
 import os
 from application.backblaze_helper import BackblazeHelper  # Import the Backblaze helper
 import re
+from sqlalchemy import func
 
 # Create a Blueprint object
 routes_bp = Blueprint('routes', __name__)
@@ -395,18 +396,18 @@ def save_image():
         # Parse the JSON payload
         data = request.get_json()
 
-        temp_filename = data.get('temp_filename')  # Now receiving the combined image filename
+        temp_filename = data.get('temp_filename')
         class_label = data.get('class_label')
         model_name = data.get('model_name')
 
         if not temp_filename or not class_label or not model_name:
-            print("Missing temp_filename, class_label, or model_name")  # Debugging line to check what is missing
-            return jsonify({'success': False, 'error': 'Missing required data (temp_filename, class_label, model_name).'}), 400
+            print("Missing temp_filename, class_label, or model_name")
+            return jsonify({'success': False, 'error': 'Missing required data.'}), 400
 
         # Load the temporary image from the gen_images folder
         temp_path = os.path.join(IMAGE_DIR, temp_filename)
         if not os.path.exists(temp_path):
-            print(f"Image not found: {temp_path}")  # Debugging line to check file existence
+            print(f"Image not found: {temp_path}")
             return jsonify({'success': False, 'error': 'Temporary image file not found.'}), 400
 
         # Open the image and save it to an in-memory buffer
@@ -419,14 +420,19 @@ def save_image():
         image_filename = f"user_{current_user.id}_ts_{timestamp}_id_{unique_id}.png"
 
         # Upload the image to Backblaze B2
-        uploaded_filename = BackblazeHelper().upload_file(buffer, image_filename)
+        backblaze_helper = BackblazeHelper()
+        uploaded_filename = backblaze_helper.upload_file(buffer, image_filename)
 
-        # Save the image metadata to the database
+        # Generate a signed URL with a longer expiration time (e.g., 24 hours)
+        signed_url = backblaze_helper.generate_signed_url(uploaded_filename, expiration_time=86400)
+
+        # Save the image metadata (including the signed URL) to the database
         new_prediction = ImagePrediction(
             user_id=current_user.id,
             image_filename=uploaded_filename,
+            image_url=signed_url,  # Store the signed URL
             class_label=class_label,
-            model_name=model_name  # Store the selected model name in the database
+            model_name=model_name
         )
         db.session.add(new_prediction)
         db.session.commit()
@@ -442,22 +448,126 @@ def save_image():
         print(f"Error saving image: {e}")
         return jsonify({'success': False, 'error': 'An error occurred while saving the image.'}), 500
 
+def count_saved_models(model_type):
+    # Replace with actual logic to count saved models based on the model type
+    return db.session.query(ImagePrediction).filter_by(model_name=model_type).count()
+
+def get_first_prediction_time():
+    """
+    Returns the datetime of the very first prediction made by the current user.
+    If the user has no predictions, returns the current time.
+    """
+    first_prediction = ImagePrediction.query.filter_by(user_id=current_user.id)\
+                        .order_by(ImagePrediction.predicted_on.asc()).first()
+    if first_prediction:
+        return first_prediction.predicted_on
+    else:
+        # If no prediction exists, return the current time (or you could return None)
+        return datetime.utcnow()
+    
 # Handle http://127.0.0.1:5000/history
-@routes_bp.route('/history', methods=['GET'])
+@routes_bp.route('/history')
 @login_required
 def history():
     page = request.args.get('page', 1, type=int)
-    per_page = 4 # Number of generations per page
-    
-    # Fetch generations with pagination
-    generations = ImagePrediction.query.filter_by(user_id=current_user.id).paginate(page=page, per_page=per_page)
-    
-    # Generate signed URLs for each image
-    backblaze_helper = BackblazeHelper()
-    for generation in generations.items:
-        generation.image_url = backblaze_helper.generate_signed_url(generation.image_filename)
-    
-    return render_template('history.html', generations=generations)
+    generations = ImagePrediction.query.filter_by(user_id=current_user.id).paginate(page=page, per_page=4)
+    username = current_user.username
+
+    # Assuming 'min_date' and 'max_date' are datetime objects
+    min_date = ImagePrediction.query.filter_by(user_id=current_user.id).order_by(ImagePrediction.predicted_on).first().predicted_on
+    max_date = ImagePrediction.query.filter_by(user_id=current_user.id).order_by(ImagePrediction.predicted_on.desc()).first().predicted_on
+
+    # Convert to ISO format
+    min_date_iso = min_date.isoformat()  # Converts to 'YYYY-MM-DDTHH:MM:SS'
+    max_date_iso = max_date.isoformat()  # Converts to 'YYYY-MM-DDTHH:MM:SS'
+
+    # Get the deleted count from the session, default to 0 if not set
+    deleted_count = session.get('deleted_count', 0)
+
+    first_prediction_time = get_first_prediction_time()  # your existing helper
+    saved_models = {
+        'cgan': count_saved_models('cgan'),
+        'dcgan': count_saved_models('dcgan')
+    }
+
+    return render_template('history.html',
+                           generations=generations,
+                           username=username,
+                           deleted_count=deleted_count,
+                           first_prediction_time=first_prediction_time,
+                           min_date=min_date_iso,
+                           max_date=max_date_iso,
+                           saved_models=saved_models)
+
+# Handle http://127.0.0.1:5000/delete_prediction
+@routes_bp.route('/delete_prediction/<int:prediction_id>', methods=['POST'])
+@login_required
+def delete_prediction(prediction_id):
+    try:
+        # Retrieve the prediction from the database
+        prediction = ImagePrediction.query.get_or_404(prediction_id)
+
+        # Ensure the current user owns this prediction
+        if prediction.user_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Unauthorized action.'}), 403
+
+        # Remove the image from Backblaze B2 using the new delete_file method
+        backblaze_helper = BackblazeHelper()
+        delete_success = backblaze_helper.delete_all_versions(prediction.image_filename)
+
+        if not delete_success:
+            return jsonify({'success': False, 'error': 'Failed to delete image from cloud storage.'}), 500
+
+        # Delete the prediction from the database
+        db.session.delete(prediction)
+        db.session.commit()
+
+        # Increment the delete count in the session
+        if 'deleted_count' not in session:
+            session['deleted_count'] = 0
+        session['deleted_count'] += 1
+
+        return jsonify({'success': True, 'message': 'Prediction deleted successfully.'})
+
+    except Exception as e:
+        print(f"Error deleting prediction: {e}")
+        return jsonify({'success': False, 'error': 'An error occurred while deleting the prediction.'}), 500
+
+# Handle http://127.0.0.1:5000/filter_predictions
+@routes_bp.route('/filter_predictions', methods=['POST'])
+def filter_predictions():
+    data = request.get_json()
+    class_label = data.get('class_label')
+    class_label_length = data.get('class_label_length')
+    model = data.get('model')
+
+    # Log the incoming data for debugging
+    print(f"Received filters: class_label={class_label}, class_label_length={class_label_length}, model={model}")
+
+    query = ImagePrediction.query.filter_by(user_id=current_user.id)
+
+    # Apply filters if present
+    if class_label:
+        query = query.filter(ImagePrediction.class_label.like(f'{class_label}%'))
+
+    if model:
+        query = query.filter_by(model_name=model)
+
+    if class_label_length:
+        query = query.filter(func.length(ImagePrediction.class_label) <= int(class_label_length))
+
+    filtered_predictions = query.all()
+
+    # Check by manually constructing the dict
+    filtered_predictions_dict = [{
+        'id': prediction.id,
+        'image_url': prediction.image_url,
+        'class_label': prediction.class_label,
+        'model_name': prediction.model_name,
+        'predicted_on': prediction.predicted_on
+    } for prediction in filtered_predictions]
+
+    return jsonify({'filtered_predictions': filtered_predictions_dict})
 
 ###############################################################
 #################### API SECTION ##############################
