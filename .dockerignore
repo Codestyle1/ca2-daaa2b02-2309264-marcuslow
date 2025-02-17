@@ -1,0 +1,7 @@
+../venv/
+Dockerfile.gen
+.gitlab-ci.yml
+__pycache__
+*.md
+.git
+RPA
