@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash
 from application.models import Login
 from sqlalchemy import text
 
+# Create Fixtures here
 # Create and configure a test app
 @pytest.fixture(scope='module')
 def test_app():
