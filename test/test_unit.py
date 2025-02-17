@@ -1,7 +1,7 @@
 import pytest
 from flask import url_for
 from application.models import Login, ImagePrediction
-from application import app, db
+from application import db
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash
 from conftest import test_client, test_app  # Import the test_client fixture
