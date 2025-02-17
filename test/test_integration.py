@@ -3,6 +3,8 @@ from application.models import Login
 from application import db
 from sqlalchemy import inspect
 
+### INTEGRATION TEST HERE ###
+
 ######################################
 ######## Integration Testing #########
 ######################################
