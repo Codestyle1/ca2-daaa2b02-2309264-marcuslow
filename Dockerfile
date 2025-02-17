@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.13-slim
+FROM python:3.8-slim
 
 # Set the working directory in the container (inside the application folder)
 WORKDIR /ca2-daaa2b02-2309264-marcuslow/application
