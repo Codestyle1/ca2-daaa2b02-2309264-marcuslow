@@ -568,6 +568,12 @@ def filter_predictions():
 
     return jsonify({'filtered_predictions': filtered_predictions_dict})
 
+# Dummy page
+@routes_bp.route("/dummy")
+def dummy():
+	return "<h1>About Me</h1>"
+
+
 ###############################################################
 #################### API SECTION ##############################
 ###############################################################
